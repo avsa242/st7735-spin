@@ -95,6 +95,34 @@ PUB DeviceID
     readReg(core#RDDID, 3, @result)
 }
 
+PUB DisplayBounds(xs, ys, xe, ye) | tmp
+' Set display start and end offsets
+' XXX
+' These definitions are in Adafruit's driver for the green tabbed 1.44" display,
+'   but they didn't quite work for me - the display was shifted up and to the left,
+'   leaving garbage around the right edge:
+'   tmp.byte[0] := $00
+'   tmp.byte[0] := $00
+'   tmp.byte[0] := $00
+'   tmp.byte[0] := $7F
+
+'   tmp.byte[0] := $00
+'   tmp.byte[0] := $00
+'   tmp.byte[0] := $00
+'   tmp.byte[0] := $7F
+
+    tmp.byte[0] := xs.byte[1]
+    tmp.byte[1] := xs.byte[0]
+    tmp.byte[2] := xe.byte[1]
+    tmp.byte[3] := xe.byte[0]
+    writeReg(core#CASET, 4, @tmp)
+
+    tmp.byte[0] := ys.byte[1]
+    tmp.byte[1] := ys.byte[0]
+    tmp.byte[2] := ye.byte[1]
+    tmp.byte[3] := ye.byte[0]
+    writeReg(core#RASET, 4, @tmp)
+
 PUB GammaTableN(buff_addr)
 ' Modify gamma table (negative polarity)
     writeReg(core#GMCTRN1, 16, buff_addr)
@@ -191,20 +219,7 @@ PUB red_greentabinit | tmp[4]
 
     ColorDepth(16)
 
-'part2 greentab 1.44" only
-    'clrt(@tmp)
-    tmp.byte[0] := $00'$00
-    tmp.byte[1] := $02'$00
-    tmp.byte[2] := $00'$00
-    tmp.byte[3] := $7f+$02'$7F
-    writeReg(core#CASET, 4, @tmp)
-
-    'clrt(@tmp)
-    tmp.byte[0] := $00'$00
-    tmp.byte[1] := $03'$00
-    tmp.byte[2] := $00'$00
-    tmp.byte[3] := $9f+$01'$7F
-    writeReg(core#RASET, 4, @tmp)
+    DisplayBounds(2, 3, 129, 129)   '00 02 00 7F+02  00 03 00 9F+01
 
 'part3 red/green tab
     GammaTableP(@gammatable_pos)
