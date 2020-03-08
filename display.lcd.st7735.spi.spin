@@ -21,6 +21,23 @@ CON
     RGB                 = 0
     BGR                 = 1
 
+' Power control 5
+    OFF                 = 0
+    SMALL               = 1
+    MEDLOW              = 2
+    MED                 = 3
+    MEDHI               = 4
+    LARGE               = 5
+
+    BCLK1_1             = 0
+    BCLK1_2             = 1
+    BCLK1_4             = 2
+    BCLK2_2             = 3
+    BCLK2_4             = 4
+    BCLK4_4             = 5
+    BCLK4_8             = 6
+    BCLK4_16            = 7
+
 VAR
 
     long _draw_buffer
@@ -218,6 +235,34 @@ PUB Reset
     io.High(_RESET)
     time.MSleep(5)
 }
+PUB PowerControl5(Isource, boost_clkdiv) | tmp
+' Set partial mode/full-colors power control
+'   Valid values:
+'       Isource: Set opamp current
+'           OFF (0): Disabled
+'           SMALL, *MEDLOW, MED, MEDHI, LARGE
+'       boost_clkdiv: Set booster circuit clock frequency divisor
+'           Setting     Booster circuit 1       Booster circuit 2, 4
+'           BCLK1_1:    BCLK / 1                BCLK / 1
+'           BCLK1_2:    BCLK / 1                BCLK / 2
+'           BCLK1_4:    BCLK / 1                BCLK / 4
+'           BCLK2_2:    BCLK / 2                BCLK / 2
+'          *BCLK2_4:    BCLK / 2                BCLK / 4
+'           BCLK4_4:    BCLK / 4                BCLK / 4
+'           BCLK4_8:    BCLK / 4                BCLK / 8
+'           BCLK4_16:   BCLK / 4                BCLK / 16
+    case Isource
+        OFF, SMALL, MEDLOW, MED, MEDHI, LARGE:
+        OTHER:
+            return FALSE
+
+    case boost_clkdiv
+        BCLK1_1, BCLK1_2, BCLK1_4, BCLK2_2, BCLK2_4, BCLK4_4, BCLK4_8, BCLK4_16:
+        OTHER:
+            return FALSE
+
+    writeReg(core#PWCTR5, 2, @Isource)
+
 PUB SubpixelOrder(order) | tmp
 ' Set subpixel color order
 '   Valid values:
@@ -283,9 +328,8 @@ PUB red_greentabinit | tmp[4]
     tmp.byte[1] := $2a
     writeReg(core#PWCTR4, 2, @tmp)
 
-    tmp.byte[0] := $8a
-    tmp.byte[1] := $ee
-    writeReg(core#PWCTR5, 2, @tmp)
+    PowerControl5(MEDLOW, BCLK2_4)  ' The Adafruit driver values for their 1.44" display are 8A, EE
+                                    '   but those don't seem to be valid values, per the datasheet
 
     VCOMVoltage(2_850, -0_575)
     DisplayInverted(FALSE)
