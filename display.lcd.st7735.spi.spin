@@ -2,7 +2,7 @@
     --------------------------------------------
     Filename: display.lcd.st7735.spi.spin
     Author: Jesse Burt
-    Description: Driver for Sitronics ST7735-based displays (4W SPI)
+    Description: Driver for Sitronix ST7735-based displays (4W SPI)
     Copyright (c) 2020
     Started Mar 07, 2020
     Updated Mar 08, 2020

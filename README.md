@@ -1,16 +1,16 @@
 # st7735-spin 
---------------
+-------------
 
-This is a P8X32A/Propeller [driver] object for ____.
+This is a P8X32A/Propeller driver object for Sitronix ST7735-based TFT-LCD displays
 
 ## Salient Features
 
-* Feature 1
-* Feature 2
+* SPI connection at up to 1MHz (4W: CS, SCL, SDA, DC, w/RESET))
+* Integration with the generic bitmap graphics library
 
 ## Requirements
 
-* Requirement 1
+* P1/SPIN1: 1 extra core/cog for the PASM I2C driver
 
 ## Compiler Compatibility
 
@@ -19,7 +19,7 @@ This is a P8X32A/Propeller [driver] object for ____.
 ## Limitations
 
 * Very early in development - may malfunction, or outright fail to build
-* Limitation 2
+* Many
 
 ## TODO
 
