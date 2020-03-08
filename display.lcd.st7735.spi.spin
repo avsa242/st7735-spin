@@ -128,6 +128,18 @@ PUB DisplayBounds(xs, ys, xe, ye) | tmp
     tmp.byte[3] := ye.byte[0]
     writeReg(core#RASET, 4, @tmp)
 
+PUB DisplayInverted(enabled)
+' Invert display colors
+'   Valid values: TRUE (-1 or 1), FALSE (0)
+'   Any other value is ignored
+    case ||enabled
+        0, 1:
+            enabled := lookupz(||enabled: core#INVOFF, core#INVON)
+        OTHER:
+            return FALSE
+
+    writeReg(enabled, 0, 0)
+
 PUB DisplayVisible(enabled)
 ' Enable display visiblity
 '   NOTE: Doesn't affect display RAM contents.
@@ -278,7 +290,7 @@ PUB red_greentabinit | tmp[4]
     tmp.byte[0] := $0e
     writeReg(core#VMCTR1, 1, @tmp)
 
-    writeReg(core#INVOFF, 0, 0)
+    DisplayInverted(FALSE)
 
     MirrorH(TRUE)
     MirrorV(TRUE)
