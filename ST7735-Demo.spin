@@ -45,22 +45,25 @@ VAR
     word _framebuff[BUFFSZ_WORDS]
     byte _ser_cog
 
-PUB Main | m, x
+PUB Main | x, y
 
     Setup
     st7735.red_greentabinit
+
+    st7735.Clear
+    y := 63
+    repeat x from 0 to 127
+        st7735.Line(x, 0, x, y, x << 3)
+
+    st7735.Line(0, 0, 127, 63, $FFFF)
+    st7735.Line(127, 0, 0, 63, $FFFF)
+    st7735.Circle(64, 32, 32, $1F00)
+    st7735.Box(0, 0, 127, 63, $FF00, FALSE)
     st7735.BGColor($0000)
     st7735.FGColor($FFFF)
-    st7735.Clear
     st7735.Position(0, 0)
     st7735.Str(string("Ready."))
-    m := 124    ' XXX >124 crashes
-    repeat x from 0 to 30
-        st7735.Line(x, 0, x, m, x)
 
-'    st7735.Line(0, 0, m, m, $FFFF)
-'    st7735.Line(m, 0, 0, m, $FFFF)
-'    flashled(led, 50)
     st7735.Update
     FlashLED(LED, 100)
 

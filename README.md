@@ -19,9 +19,11 @@ This is a P8X32A/Propeller driver object for Sitronix ST7735-based TFT-LCD displ
 ## Limitations
 
 * Very early in development - may malfunction, or outright fail to build
-* Many
+* P1 has insufficient RAM to buffer the entire display
 
 ## TODO
 
-- [ ] Task item 1
-- [ ] Task item 2
+- [ ] Port to P2/SPIN2
+- [ ] Use the 20MHz SPI driver for the P1
+- [ ] Add some direct-draw methods to the driver for apps that don't need a full buffered display
+- [ ] Add optional backlight pin to enable backlight control (PWM)
