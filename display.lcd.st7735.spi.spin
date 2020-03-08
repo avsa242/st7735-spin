@@ -144,6 +144,16 @@ PUB GammaTableP(buff_addr)
 ' Modify gamma table (negative polarity)
     writeReg(core#GMCTRP1, 16, buff_addr)
 
+PUB PartialDisplay(enabled)
+' Enable partial display
+    case ||enabled
+        0, 1:
+            enabled := (1 - ||enabled) + core#NORON
+        OTHER:
+            return FALSE
+
+    writeReg(enabled, 0, 0)
+
 {
 PUB Powered(enabled) | tmp
 '120ms between states
@@ -170,19 +180,16 @@ PUB red_greentabinit | tmp[4]
     writeReg(core#SLPOUT, 0, 0)
     time.MSleep(500)
 
-    'clrt(@tmp)
     tmp.byte[0] := $01
     tmp.byte[1] := $2c
     tmp.byte[2] := $2d
     writeReg(core#FRMCTR1, 3, @tmp)
 
-    'clrt(@tmp)
     tmp.byte[0] := $01
     tmp.byte[1] := $2c
     tmp.byte[2] := $2d
     writeReg(core#FRMCTR2, 3, @tmp)
 
-    'clrt(@tmp)
     tmp.byte[0] := $01
     tmp.byte[1] := $2c
     tmp.byte[2] := $2d
@@ -191,56 +198,45 @@ PUB red_greentabinit | tmp[4]
     tmp.byte[5] := $2d
     writeReg(core#FRMCTR3, 6, @tmp)
 
-    'clrt(@tmp)
     tmp := $07
     writeReg(core#INVCTR, 1, @tmp)
 
-    'clrt(@tmp)
     tmp.byte[0] := $a2
     tmp.byte[1] := $02
     tmp.byte[2] := $84
     writeReg(core#PWCTR1, 3, @tmp)
 
-    'clrt(@tmp)
     tmp := $c5
     writeReg(core#PWCTR2, 1, @tmp)
 
-    'clrt(@tmp)
     tmp.byte[0] := $0a
     tmp.byte[1] := $00
     writeReg(core#PWCTR3, 2, @tmp)
 
-    'clrt(@tmp)
     tmp.byte[0] := $8a
     tmp.byte[1] := $2a
     writeReg(core#PWCTR4, 2, @tmp)
 
-    'clrt(@tmp)
     tmp.byte[0] := $8a
     tmp.byte[1] := $ee
     writeReg(core#PWCTR5, 2, @tmp)
 
-    'clrt(@tmp)
     tmp.byte[0] := $0e
     writeReg(core#VMCTR1, 1, @tmp)
 
     writeReg(core#INVOFF, 0, 0)
 
-    'clrt(@tmp)
     tmp := $c8  'row/col addr, bottom-top refr
     writeReg(core#MADCTL, 1, @tmp)
 
     ColorDepth(16)
-
     DisplayBounds(2, 3, 129, 129)   '00 02 00 7F+02  00 03 00 9F+01
 
 'part3 red/green tab
     GammaTableP(@gammatable_pos)
     GammaTableN(@gammatable_neg)
 
-    writeReg(core#NORON, 0, 0)
-    time.MSleep(10)
-
+    PartialDisplay(FALSE)
     DisplayVisible(TRUE)
 
 PUB Update | tmp
