@@ -287,9 +287,7 @@ PUB red_greentabinit | tmp[4]
     tmp.byte[1] := $ee
     writeReg(core#PWCTR5, 2, @tmp)
 
-    tmp.byte[0] := $0e
-    writeReg(core#VMCTR1, 1, @tmp)
-
+    VCOMVoltage(2_850, -0_575)
     DisplayInverted(FALSE)
 
     MirrorH(TRUE)
@@ -309,6 +307,27 @@ PUB red_greentabinit | tmp[4]
 PUB Update | tmp
 
     writeReg(core#RAMWR, _buff_sz, _draw_buffer)
+
+PUB VCOMVoltage(high_mV, low_mV)
+' Set VCOM high and low voltage levels, in millivolts
+'   Valid values:
+'       high_mV: 2_500..5_000 (in increments of 25mV)   Default: 4_525
+'       low_mV: -2_400..0_000 (in increments of 25mV)   Default: -0_575
+'   NOTE: Values are rounded to the nearest 25mV
+    case high_mV
+        2_500..5_000:
+            high_mV := (high_mV / 25) - 100
+        OTHER:
+            return FALSE
+
+    case low_mv
+        -2_400..0:
+            low_mV := (low_mV / 25) + 100
+        OTHER:
+            return FALSE
+
+    writeReg(core#VMCTR1, 2, @high_mV)
+
 {
 PRI readReg(reg, nr_bytes, buff_addr) | tmp         ' * Not possible on Adafruit breakout boards, possibly others
 ' Read nr_bytes from register 'reg' to address 'buf_addr'
@@ -335,6 +354,7 @@ PRI readReg(reg, nr_bytes, buff_addr) | tmp         ' * Not possible on Adafruit
     io.High(_CS)
 }
 }
+
 PRI writeReg(reg, nr_bytes, buff_addr) | i
 ' Write nr_bytes to register 'reg' stored at buf_addr
     case reg
