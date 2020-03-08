@@ -123,6 +123,19 @@ PUB DisplayBounds(xs, ys, xe, ye) | tmp
     tmp.byte[3] := ye.byte[0]
     writeReg(core#RASET, 4, @tmp)
 
+PUB DisplayVisible(enabled)
+' Enable display visiblity
+'   NOTE: Doesn't affect display RAM contents.
+'   NOTE: There is a mandatory 120ms delay imposed by calling this method
+    case ||enabled
+        0, 1:
+            enabled := ||enabled + core#DISPOFF
+        OTHER:
+            return FALSE
+
+    writeReg(enabled, 0, 0)
+    time.MSleep(120)
+
 PUB GammaTableN(buff_addr)
 ' Modify gamma table (negative polarity)
     writeReg(core#GMCTRN1, 16, buff_addr)
@@ -227,8 +240,8 @@ PUB red_greentabinit | tmp[4]
 
     writeReg(core#NORON, 0, 0)
     time.MSleep(10)
-    writeReg(core#DISPON, 0, 0)
-    time.MSleep(100)
+
+    DisplayVisible(TRUE)
 
 PUB Update | tmp
 
