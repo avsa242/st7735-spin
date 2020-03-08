@@ -17,13 +17,18 @@ CON
     MAX_COLOR           = 65535
 '   MAX_COLOR           = 262144
 
+' Subpixel order
+    RGB                 = 0
+    BGR                 = 1
+
 VAR
 
     long _draw_buffer
     word _buff_sz
     byte _CS, _SDA, _SCK, _RESET, _DC
     byte _disp_width, _disp_height, _disp_xmax, _disp_ymax
-    byte _colmod
+'   Shadow registers
+    byte _colmod, _madctl
 
 OBJ
 
@@ -144,6 +149,40 @@ PUB GammaTableP(buff_addr)
 ' Modify gamma table (negative polarity)
     writeReg(core#GMCTRP1, 16, buff_addr)
 
+PUB MirrorH(enabled) | tmp
+' Mirror the display, horizontally
+'   Valid values: TRUE (-1 or 1), FALSE (0)
+'   Any other value is ignored
+    tmp := $00
+    tmp := _madctl
+    case ||enabled
+        0, 1:
+            enabled := ||enabled << core#FLD_MX
+        OTHER:
+            result := (tmp >> core#FLD_MX) & %1
+            return
+
+    _madctl &= core#MASK_MX
+    _madctl := (_madctl | enabled) & core#MADCTL_MASK
+    writeReg(core#MADCTL, 1, @_madctl)
+
+PUB MirrorV(enabled) | tmp
+' Mirror the display, vertically
+'   Valid values: TRUE (-1 or 1), FALSE (0)
+'   Any other value is ignored
+    tmp := $00
+    tmp := _madctl
+    case ||enabled
+        0, 1:
+            enabled := ||enabled << core#FLD_MY
+        OTHER:
+            result := (tmp >> core#FLD_MY) & %1
+            return
+
+    _madctl &= core#MASK_MY
+    _madctl := (_madctl | enabled) & core#MADCTL_MASK
+    writeReg(core#MADCTL, 1, @_madctl)
+
 PUB PartialDisplay(enabled)
 ' Enable partial display
     case ||enabled
@@ -167,9 +206,24 @@ PUB Reset
     io.High(_RESET)
     time.MSleep(5)
 }
-PUB clrt(a)
+PUB SubpixelOrder(order) | tmp
+' Set subpixel color order
+'   Valid values:
+'       RGB (0): Red-Green-Blue order
+'       BGR (1): Blue-Green-Red order
+'   Any other value returns the current setting
+    tmp := $00
+    tmp := _madctl
+    case order
+        0, 1:
+            order <<= core#FLD_RGB
+        OTHER:
+            result := (tmp >> core#FLD_RGB) & %1
+            return
 
-    longfill(a, $00_00_00_00, 4)
+    _madctl &= core#MASK_RGB
+    _madctl := (_madctl | order) & core#MADCTL_MASK
+    writeReg(core#MADCTL, 1, @_madctl)
 
 PUB red_greentabinit | tmp[4]
 
@@ -226,8 +280,9 @@ PUB red_greentabinit | tmp[4]
 
     writeReg(core#INVOFF, 0, 0)
 
-    tmp := $c8  'row/col addr, bottom-top refr
-    writeReg(core#MADCTL, 1, @tmp)
+    MirrorH(TRUE)
+    MirrorV(TRUE)
+    SubpixelOrder(BGR)
 
     ColorDepth(16)
     DisplayBounds(2, 3, 129, 129)   '00 02 00 7F+02  00 03 00 9F+01

@@ -45,7 +45,22 @@ CON
     PTLAR                       = $30
     TEOFF                       = $34
     TEON                        = $35
+
     MADCTL                      = $36
+    MADCTL_MASK                 = $FC
+        FLD_MY                  = 7
+        FLD_MX                  = 6
+        FLD_MV                  = 5
+        FLD_ML                  = 4
+        FLD_RGB                 = 3
+        FLD_MH                  = 2
+        MASK_MY                 = MADCTL_MASK ^ (1 << FLD_MY)
+        MASK_MX                 = MADCTL_MASK ^ (1 << FLD_MX)
+        MASK_MV                 = MADCTL_MASK ^ (1 << FLD_MV)
+        MASK_ML                 = MADCTL_MASK ^ (1 << FLD_ML)
+        MASK_RGB                = MADCTL_MASK ^ (1 << FLD_RGB)
+        MASK_MH                 = MADCTL_MASK ^ (1 << FLD_MH)
+
     IDMOFF                      = $38
     IDMON                       = $39
 
