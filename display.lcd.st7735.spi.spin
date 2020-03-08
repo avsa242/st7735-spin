@@ -1,11 +1,11 @@
 {
     --------------------------------------------
     Filename: display.lcd.st7735.spi.spin
-    Author:
-    Description:
+    Author: Jesse Burt
+    Description: Driver for Sitronics ST7735-based displays (4W SPI)
     Copyright (c) 2020
     Started Mar 07, 2020
-    Updated Mar 07, 2020
+    Updated Mar 08, 2020
     See end of file for terms of use.
     --------------------------------------------
 }
@@ -15,14 +15,15 @@
 CON
 
     MAX_COLOR           = 65535
+'   MAX_COLOR           = 262144
 
 VAR
 
     long _draw_buffer
     word _buff_sz
     byte _CS, _SDA, _SCK, _RESET, _DC
-    byte _disp_width, _disp_height
-    word _fb[8192]
+    byte _disp_width, _disp_height, _disp_xmax, _disp_ymax
+    byte _colmod
 
 OBJ
 
@@ -52,8 +53,10 @@ PUB Start(CS_PIN, SCK_PIN, SDA_PIN, DC_PIN, RESET_PIN, drawbuffer_address): okay
 
         _disp_width := 128
         _disp_height := 128
-        _buff_sz := (_disp_width * _disp_height) * 3
-        Reset
+        _disp_xmax := _disp_width-1
+        _disp_ymax := _disp_height-1
+        _buff_sz := (_disp_width * _disp_height)' * 3 ' too big for P1 RAM
+'        Reset
         Address(drawbuffer_address)
         return okay
 
@@ -70,6 +73,19 @@ PUB Address(addr)
 
 PUB ClearAccel
 
+PUB ColorDepth(format) | tmp
+' Set color depth/format, in bits per pixel
+'   Valid values: 12, 16, 18
+'   Any other value returns the current setting
+    tmp := $00
+    case format
+        12, 16, 18:
+            format := lookdown(format: 0, 0, 12, 0, 16, 18)
+        OTHER:
+            return _colmod & core#BITS_IFPF
+
+    writeReg(core#COLMOD, 1, @format)
+
 PUB DeviceID
 
     readReg(core#RDDID, 3, @result)
@@ -84,32 +100,145 @@ PUB Reset
     io.High(_RESET)
     time.MSleep(5)
 
-PUB testp | xs, xe, ys, ye, l1, xc, yc, black, i
+PUB clrt(a)
 
-    xs := ys := 0
-    xe := ye := 127
+    longfill(a, $00_00_00_00, 4)
+
+PUB red_greentabinit | tmp[4]
+
+'rcmd1
+    writeReg(core#SOFT_RESET, 0, 0)
+    time.MSleep(150)
+
     writeReg(core#SLPOUT, 0, 0)
     time.MSleep(500)
-    writeReg(core#NORON, 0, 0)
-    writeReg(core#DISPON, 0, 0)
-    xc.byte[0] := xs.byte[1]
-    xc.byte[1] := xs.byte[0]
-    xc.byte[2] := xe.byte[1]
-    xc.byte[3] := xs.byte[0]
-    yc.byte[0] := ys.byte[1]
-    yc.byte[1] := ys.byte[0]
-    yc.byte[2] := ye.byte[1]
-    yc.byte[3] := ye.byte[0]
-    black := $00
-    l1 := $1111
 
-    bytefill(@_fb, $00, 16384)
-    _fb[2] := l1.word[0]
-    writeReg(core#CASET, 4, @xc)
-    writeReg(core#RASET, 4, @yc)
-    writeReg(core#RAMWR, 16384, @_fb)
-    
-PUB Update
+    clrt(@tmp)
+    tmp.byte[0] := $01
+    tmp.byte[1] := $2c
+    tmp.byte[2] := $2d
+    writeReg(core#FRMCTR1, 3, @tmp)
+
+    clrt(@tmp)
+    tmp.byte[0] := $01
+    tmp.byte[1] := $2c
+    tmp.byte[2] := $2d
+    writeReg(core#FRMCTR2, 3, @tmp)
+
+    clrt(@tmp)
+    tmp.byte[0] := $01
+    tmp.byte[1] := $2c
+    tmp.byte[2] := $2d
+    tmp.byte[3] := $01
+    tmp.byte[4] := $2c
+    tmp.byte[5] := $2d
+    writeReg(core#FRMCTR3, 6, @tmp)
+
+    clrt(@tmp)
+    tmp := $07
+    writeReg(core#INVCTR, 1, @tmp)
+
+    clrt(@tmp)
+    tmp.byte[0] := $a2
+    tmp.byte[1] := $02
+    tmp.byte[2] := $84
+    writeReg(core#PWCTR1, 3, @tmp)
+
+    clrt(@tmp)
+    tmp := $c5
+    writeReg(core#PWCTR2, 1, @tmp)
+
+    clrt(@tmp)
+    tmp.byte[0] := $0a
+    tmp.byte[1] := $00
+    writeReg(core#PWCTR3, 2, @tmp)
+
+    clrt(@tmp)
+    tmp.byte[0] := $8a
+    tmp.byte[1] := $2a
+    writeReg(core#PWCTR4, 2, @tmp)
+
+    clrt(@tmp)
+    tmp.byte[0] := $8a
+    tmp.byte[1] := $ee
+    writeReg(core#PWCTR5, 2, @tmp)
+
+    clrt(@tmp)
+    tmp.byte[0] := $0e
+    writeReg(core#VMCTR1, 1, @tmp)
+
+    writeReg(core#INVOFF, 0, 0)
+
+    clrt(@tmp)
+    tmp := $c8  'row/col addr, bottom-top refr
+    writeReg(core#MADCTL, 1, @tmp)
+
+    clrt(@tmp)
+    tmp := 05
+    writeReg(core#COLMOD, 1, @tmp)
+
+'part2 greentab 1.44" only
+    clrt(@tmp)
+    tmp.byte[0] := $00
+    tmp.byte[1] := $00
+    tmp.byte[2] := $00
+    tmp.byte[3] := $7F
+    writeReg(core#CASET, 4, @tmp)
+
+    clrt(@tmp)
+    tmp.byte[0] := $00
+    tmp.byte[1] := $00
+    tmp.byte[2] := $00
+    tmp.byte[3] := $7F
+    writeReg(core#RASET, 4, @tmp)
+
+'part3 red/green tab
+    clrt(@tmp)
+    tmp.byte[0] := $02
+    tmp.byte[1] := $1c
+    tmp.byte[2] := $07
+    tmp.byte[3] := $12
+    tmp.byte[4] := $37
+    tmp.byte[5] := $32
+    tmp.byte[6] := $29
+    tmp.byte[7] := $2d
+    tmp.byte[8] := $29
+    tmp.byte[9] := $25
+    tmp.byte[10] := $2b
+    tmp.byte[11] := $39
+    tmp.byte[12] := $00
+    tmp.byte[13] := $01
+    tmp.byte[14] := $03
+    tmp.byte[15] := $10
+    writeReg(core#GMCTRP1, 16, @tmp)
+
+    clrt(@tmp)
+    tmp.byte[0] := $03
+    tmp.byte[1] := $1d
+    tmp.byte[2] := $07
+    tmp.byte[3] := $06
+    tmp.byte[4] := $2e
+    tmp.byte[5] := $2c
+    tmp.byte[6] := $29
+    tmp.byte[7] := $2d
+    tmp.byte[8] := $2e
+    tmp.byte[9] := $2e
+    tmp.byte[10] := $37
+    tmp.byte[11] := $3f
+    tmp.byte[12] := $00
+    tmp.byte[13] := $00
+    tmp.byte[14] := $02
+    tmp.byte[15] := $10
+    writeReg(core#GMCTRN1, 16, @tmp)
+
+    writeReg(core#NORON, 0, 0)
+    time.MSleep(10)
+    writeReg(core#DISPON, 0, 0)
+    time.MSleep(100)
+
+PUB Update | tmp
+
+        writeReg(core#RAMWR, _buff_sz, _draw_buffer)
 
 PRI readReg(reg, nr_bytes, buff_addr) | tmp         ' * Not possible on Adafruit breakout boards
 ' Read nr_bytes from register 'reg' to address 'buf_addr'
@@ -138,14 +267,25 @@ PRI readReg(reg, nr_bytes, buff_addr) | tmp         ' * Not possible on Adafruit
 PRI writeReg(reg, nr_bytes, buff_addr) | i
 ' Write nr_bytes to register 'reg' stored at buf_addr
     case reg
-        $00, $11, $13, $20, $21, $28, $29:
+        $00, $01, $11, $13, $20, $21, $28, $29:          ' One byte command, no params
             io.Low(_DC)                             ' D/C = Command
             io.Low(_CS)
             spi.SHIFTOUT(_SDA, _SCK, core#MOSI_BITORDER, 8, reg)
             io.High(_CS)
             return
 
-        $2A..$2C:
+        core#RAMWR:
+            io.Low(_DC)                             ' D/C = Command
+            io.Low(_CS)
+            spi.SHIFTOUT(_SDA, _SCK, core#MOSI_BITORDER, 8, reg)
+
+            io.High(_DC)                            ' D/C = Data
+            repeat i from 0 to (nr_bytes/2)-1
+                spi.SHIFTOUT(_SDA, _SCK, core#MOSI_BITORDER, 16, word[buff_addr][i])
+            io.High(_CS)
+            return
+
+        OTHER:'        $2A..$2C, $36, $3A, $B1..$B4, $B6, $C0..$C5, $E0, $E1, $FC:
             io.Low(_DC)                             ' D/C = Command
             io.Low(_CS)
             spi.SHIFTOUT(_SDA, _SCK, core#MOSI_BITORDER, 8, reg)
