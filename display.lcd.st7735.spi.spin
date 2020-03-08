@@ -235,23 +235,33 @@ PUB Reset
     io.High(_RESET)
     time.MSleep(5)
 }
-PUB PowerControl5(Isource, boost_clkdiv) | tmp
+PUB PowerControl(opmode, Isource, boost_clkdiv) | tmp
 ' Set partial mode/full-colors power control
 '   Valid values:
+'       opmode: Settings applied to operating mode
+'           3: Normal mode/full color
+'           4: Idle mode/8-color
+'           5: Partial mode/full color
 '       Isource: Set opamp current
 '           OFF (0): Disabled
-'           SMALL, *MEDLOW, MED, MEDHI, LARGE
+'           SMALL (1), MEDLOW (2), MED (3), MEDHI (4), LARGE (5)
 '       boost_clkdiv: Set booster circuit clock frequency divisor
 '           Setting     Booster circuit 1       Booster circuit 2, 4
 '           BCLK1_1:    BCLK / 1                BCLK / 1
 '           BCLK1_2:    BCLK / 1                BCLK / 2
 '           BCLK1_4:    BCLK / 1                BCLK / 4
 '           BCLK2_2:    BCLK / 2                BCLK / 2
-'          *BCLK2_4:    BCLK / 2                BCLK / 4
+'           BCLK2_4:    BCLK / 2                BCLK / 4
 '           BCLK4_4:    BCLK / 4                BCLK / 4
 '           BCLK4_8:    BCLK / 4                BCLK / 8
 '           BCLK4_16:   BCLK / 4                BCLK / 16
-    case Isource
+    case opmode
+        3..5:
+            opmode -= 3
+        OTHER:
+            return FALSE
+
+{    case Isource
         OFF, SMALL, MEDLOW, MED, MEDHI, LARGE:
         OTHER:
             return FALSE
@@ -260,8 +270,8 @@ PUB PowerControl5(Isource, boost_clkdiv) | tmp
         BCLK1_1, BCLK1_2, BCLK1_4, BCLK2_2, BCLK2_4, BCLK4_4, BCLK4_8, BCLK4_16:
         OTHER:
             return FALSE
-
-    writeReg(core#PWCTR5, 2, @Isource)
+}
+    writeReg(core#PWCTR3 + opmode, 2, @Isource)
 
 PUB SubpixelOrder(order) | tmp
 ' Set subpixel color order
@@ -320,16 +330,13 @@ PUB red_greentabinit | tmp[4]
     tmp := $c5
     writeReg(core#PWCTR2, 1, @tmp)
 
-    tmp.byte[0] := $0a
-    tmp.byte[1] := $00
-    writeReg(core#PWCTR3, 2, @tmp)
+'    tmp.byte[0] := $0a
+'    tmp.byte[1] := $00
+'    writeReg(core#PWCTR3, 2, @tmp)
 
-    tmp.byte[0] := $8a
-    tmp.byte[1] := $2a
-    writeReg(core#PWCTR4, 2, @tmp)
-
-    PowerControl5(MEDLOW, BCLK2_4)  ' The Adafruit driver values for their 1.44" display are 8A, EE
-                                    '   but those don't seem to be valid values, per the datasheet
+    PowerControl(3, $0A, $00)
+    PowerControl(4, $8A, $2A)
+    PowerControl(5, $8A, $EE)
 
     VCOMVoltage(2_850, -0_575)
     DisplayInverted(FALSE)
