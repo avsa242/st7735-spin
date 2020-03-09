@@ -5,7 +5,7 @@
     Description: Driver for Sitronix ST7735-based displays (4W SPI)
     Copyright (c) 2020
     Started Mar 07, 2020
-    Updated Mar 08, 2020
+    Updated Mar 09, 2020
     See end of file for terms of use.
     --------------------------------------------
 }

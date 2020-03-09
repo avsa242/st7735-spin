@@ -7,6 +7,10 @@ This is a P8X32A/Propeller driver object for Sitronix ST7735-based TFT-LCD displ
 
 * SPI connection at up to 1MHz (4W: CS, SCL, SDA, DC, w/RESET))
 * Integration with the generic bitmap graphics library
+* Display mirroring
+* Control display visibility (independent of display RAM contents)
+* Set subpixel order
+* Set color depth (12, 16, 18-bit can be set; currently only 16-bit supported by driver)
 
 ## Requirements
 
@@ -14,7 +18,8 @@ This is a P8X32A/Propeller driver object for Sitronix ST7735-based TFT-LCD displ
 
 ## Compiler Compatibility
 
-* OpenSpin (tested with 1.00.81)
+* P1/SPIN1: OpenSpin (tested with 1.00.81)
+* P1/SPIN1: FastSpin (tested with 4.1.0-beta): Partial
 
 ## Limitations
 
@@ -27,3 +32,4 @@ This is a P8X32A/Propeller driver object for Sitronix ST7735-based TFT-LCD displ
 - [ ] Use the 20MHz SPI driver for the P1
 - [ ] Add some direct-draw methods to the driver for apps that don't need a full buffered display
 - [ ] Add optional backlight pin to enable backlight control (PWM)
+- [ ] Test external memory options with driver
