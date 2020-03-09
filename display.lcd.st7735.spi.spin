@@ -40,14 +40,14 @@ VAR
     long _draw_buffer
     word _buff_sz
     word _framerate
-    byte _CS, _SDA, _SCK, _RESET, _DC
+    byte _SDA, _SCK, _RESET, _DC
     byte _disp_width, _disp_height, _disp_xmax, _disp_ymax
 '   Shadow registers
     byte _colmod, _madctl
 
 OBJ
 
-    spi : "com.spi.4w"                                             'PASM SPI Driver
+    spi : "com.spi.fast"                                             'PASM SPI Driver
     core: "core.con.st7735"
     time: "time"
     io  : "io"
@@ -56,16 +56,13 @@ PUB Null
 ''This is not a top-level object
 
 PUB Start(CS_PIN, SCK_PIN, SDA_PIN, DC_PIN, RESET_PIN, drawbuffer_address): okay
-    if okay := spi.start (core#SCK_DELAY, core#CPOL)        'SPI Object Started?
+    if okay := spi.Start(CS_PIN, SCK_PIN, SDA_PIN, SDA_PIN)
         time.MSleep (1)                                     'Add startup delay appropriate to your device (consult its datasheet)
-        _CS := CS_PIN
         _SDA := SDA_PIN
         _SCK := SCK_PIN
         _RESET := RESET_PIN
         _DC := DC_PIN
 
-        io.High(_CS)
-        io.Output(_CS)
         io.High(_RESET)
         io.Output(_RESET)
         io.High(_DC)
@@ -454,35 +451,23 @@ PRI readReg(reg, nr_bytes, buff_addr) | tmp         ' * Not possible on Adafruit
 PRI writeReg(reg, nr_bytes, buff_addr) | i
 ' Write nr_bytes to register 'reg' stored at buf_addr
     case reg
-        $00, $01, $11, $13, $20, $21, $28, $29:          ' One byte command, no params
-            io.Low(_DC)                             ' D/C = Command
-            io.Low(_CS)
-            spi.SHIFTOUT(_SDA, _SCK, core#MOSI_BITORDER, 8, reg)
-            io.High(_CS)
+        $00, $01, $11, $13, $20, $21, $28, $29:         ' One byte command, no params
+            io.Low(_DC)                                 ' D/C = Command
+            spi.Write(TRUE, @reg, 1, TRUE)              ' Write reg, raise CS after
             return
 
         core#RAMWR:
-            io.Low(_DC)                             ' D/C = Command
-            io.Low(_CS)
-            spi.SHIFTOUT(_SDA, _SCK, core#MOSI_BITORDER, 8, reg)
-
-            io.High(_DC)                            ' D/C = Data
-'            repeat i from 0 to (nr_bytes/2)-1
-'                spi.SHIFTOUT(_SDA, _SCK, core#MOSI_BITORDER, 16, word[buff_addr][i])
-            repeat i from 0 to nr_bytes-1
-                spi.SHIFTOUT(_SDA, _SCK, core#MOSI_BITORDER, 8, byte[buff_addr][i])
-            io.High(_CS)
+            io.Low(_DC)                                 ' D/C = Command
+            spi.Write(TRUE, @reg, 1, FALSE)             ' Write reg, leave CS low after
+            io.High(_DC)                                ' D/C = Data
+            spi.Write(TRUE, buff_addr, nr_bytes, TRUE)  ' Write data, raise CS after
             return
 
         $2A..$2C, $36, $3A, $B1..$B4, $B6, $C0..$C5, $E0, $E1, $FC:
-            io.Low(_DC)                             ' D/C = Command
-            io.Low(_CS)
-            spi.SHIFTOUT(_SDA, _SCK, core#MOSI_BITORDER, 8, reg)
-
-            io.High(_DC)                            ' D/C = Data
-            repeat i from 0 to nr_bytes-1
-                spi.SHIFTOUT(_SDA, _SCK, core#MOSI_BITORDER, 8, byte[buff_addr][i])
-            io.High(_CS)
+            io.Low(_DC)                                 ' D/C = Command
+            spi.Write(TRUE, @reg, 1, FALSE)             ' Write reg, leave CS low after
+            io.High(_DC)                                ' D/C = Data
+            spi.Write(TRUE, buff_addr, nr_bytes, TRUE)  ' Write data, raise CS after
             return
 
 DAT
