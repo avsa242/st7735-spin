@@ -19,6 +19,7 @@ CON
     MOSI_BITORDER               = 5             'MSBFIRST
     MISO_BITORDER               = 0             'MSBPRE
 
+    FOSC                        = 625_000       ' Display controller oscillator freq
 ' Register definitions
     NOOP                        = $00
     SOFT_RESET                  = $01
@@ -41,6 +42,7 @@ CON
     CASET                       = $2A
     RASET                       = $2B
     RAMWR                       = $2C
+    RGBSET                      = $2D
     RAMRD                       = $2E
     PTLAR                       = $30
     TEOFF                       = $34
@@ -100,20 +102,64 @@ CON
         BITS_PTG                = %11
 
     PWCTR1                      = $C0
+        FLD_VRHP                = 0
+        FLD_AVDD                = 5
+        FLD_VRHN                = 0
+        FLD_MODE                = 6
+        BITS_VRHP               = %11111
+        BITS_AVDD               = %111
+        BITS_VRHN               = %11111
+        BITS_MODE               = %11
+        MASK_VRHP               = $FF ^ (BITS_VRHP << FLD_VRHP)
+        MASK_AVDD               = $FF ^ (BITS_AVDD << FLD_AVDD)
 
     PWCTR2                      = $C1
+        FLD_VGHBT               = 0
+        FLD_VGLSEL              = 2
+        FLD_VGH2                = 6
+        BITS_VGHBT              = %11
+        BITS_VGLSEL             = %11
+        BITS_VGH2               = %11
+        MASK_VGHBT              = $CF ^ (BITS_VGHBT << FLD_VGHBT)
+        MASK_VGLSEL             = $CF ^ (BITS_VGLSEL << FLD_VGLSEL)
+        MASK_VGH2               = $CF ^ (BITS_VGH2 << FLD_VGH2)
 
     PWCTR3                      = $C2
+        FLD_AP                  = 0                                     ' These apply to PWCTR4 and 5, as well
+        FLD_SAP                 = 3
+        FLD_DCMSB               = 6
+        FLD_DCLSB               = 0
+        BITS_AP                 = %111
+        BITS_SAP                = %111
+        BITS_DCMSB              = %11
+        BITS_DCLSB              = %11111111
+        MASK_AP                 = $FF ^ (BITS_AP << FLD_AP)
+        MASK_SAP                = $FF ^ (BITS_SAP << FLD_SAP)
+        MASK_DCMSB              = $FF ^ (BITS_DCMSB << FLD_DCMSB)
 
     PWCTR4                      = $C3
-
     PWCTR5                      = $C4
 
     VMCTR1                      = $C5
+    VMCTR1_MASK                 = $3F
+        FLD_VCOMS               = 0
+        BITS_VCOMS              = %111111
+
+    VMOFCTR                     = $C7
+    VMOFCTR_MASK                = $1F
+        FLD_VMF                 = 0
+        BITS_VMF                = %11111
+
+'   WRID2                       = $D1
+'   WRID3                       = $D2
+
+'   NVCTR1                      = $D9
 
     RDID1                       = $DA
     RDID2                       = $DB
     RDID3                       = $DC
+'   NVCTR2                      = $DE
+'   NVCTR3                      = $DF
 
     GMCTRP1                     = $E0
 

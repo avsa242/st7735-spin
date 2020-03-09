@@ -52,6 +52,7 @@ PUB Main | x, y
     st7735.FGColor($FFFF)
     st7735.Clear
     st7735.Update
+
     y := 63
     repeat x from 0 to 127
         st7735.Line(x, 0, x, y, x << 3)

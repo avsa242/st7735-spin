@@ -39,6 +39,7 @@ VAR
 
     long _draw_buffer
     word _buff_sz
+    word _framerate
     byte _CS, _SDA, _SCK, _RESET, _DC
     byte _disp_width, _disp_height, _disp_xmax, _disp_ymax
 '   Shadow registers
@@ -95,23 +96,9 @@ PUB Defaults | tmp[4]
     writeReg(core#SLPOUT, 0, 0)
     time.MSleep(500)
 
-    tmp.byte[0] := $01
-    tmp.byte[1] := $2c
-    tmp.byte[2] := $2d
-    writeReg(core#FRMCTR1, 3, @tmp)
-
-    tmp.byte[0] := $01
-    tmp.byte[1] := $2c
-    tmp.byte[2] := $2d
-    writeReg(core#FRMCTR2, 3, @tmp)
-
-    tmp.byte[0] := $01
-    tmp.byte[1] := $2c
-    tmp.byte[2] := $2d
-    tmp.byte[3] := $01
-    tmp.byte[4] := $2c
-    tmp.byte[5] := $2d
-    writeReg(core#FRMCTR3, 6, @tmp)
+    FramerateCtrl(1, 1, 44, 45, 0, 0, 0)
+    FramerateCtrl(2, 1, 44, 45, 0, 0, 0)
+    FramerateCtrl(3, 1, 44, 45, 1, 44, 45)
 
     tmp := $07
     writeReg(core#INVCTR, 1, @tmp)
@@ -225,6 +212,71 @@ PUB DisplayVisible(enabled)
 
     writeReg(enabled, 0, 0)
     time.MSleep(120)
+
+PUB FrameRateCtrl(opmode, line_period, f_porch, b_porch, lim_line_period, lim_f_porch, lim_b_porch) | tmp[2], nr_bytes
+' Set frame frequency
+'   Valid values:
+'       opmode:
+'           1: Normal mode/full colors
+'           2: Idle mode/8 colors
+'           3: Partial mode/full colors
+'       line_period: 0..15
+'       f_porch: 0..63
+'       b_porch: 0..63
+'       lim_* variants (effective when in Line Inversion Mode - set only in opmode 3) - same as above
+'           - ignored when opmode is 1 or 2
+'   Any other value for opmode returns the last calculated frame frequency
+'   Any other values for other parameters are ignored
+    result := 0
+    case opmode
+        1, 2:
+            nr_bytes := 3
+        3:
+            nr_bytes := 6
+        OTHER:
+            return _framerate
+
+    case line_period
+        0..15:
+            tmp.byte[0] := line_period
+        OTHER:
+            return
+
+    case f_porch
+        0..63:
+            tmp.byte[1] := f_porch
+        OTHER:
+            return
+
+    case b_porch
+        0..63:
+            tmp.byte[2] := b_porch
+        OTHER:
+            return
+
+    if opmode == 3
+        case lim_line_period
+            0..15:
+                tmp.byte[3] := lim_line_period
+            OTHER:
+                return
+
+        case lim_f_porch
+            0..63:
+                tmp.byte[4] := lim_f_porch
+            OTHER:
+                return
+
+        case lim_b_porch
+            0..63:
+                tmp.byte[5] := lim_b_porch
+            OTHER:
+                return
+
+    opmode -= 1                                             ' Use as offset from FRMCTR1 register (+0, 1, or 2)
+    result := _framerate := core#FOSC / ((line_period * 2 + 40) * (_disp_height + f_porch + b_porch))
+
+    writeReg(core#FRMCTR1 + opmode, nr_bytes, @tmp)
 
 PUB GammaTableN(buff_addr)
 ' Modify gamma table (negative polarity)
