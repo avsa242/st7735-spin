@@ -48,9 +48,10 @@ VAR
 PUB Main | x, y
 
     Setup
-    st7735.red_greentabinit
-
+    st7735.BGColor($0000)
+    st7735.FGColor($FFFF)
     st7735.Clear
+    st7735.Update
     y := 63
     repeat x from 0 to 127
         st7735.Line(x, 0, x, y, x << 3)
@@ -59,8 +60,6 @@ PUB Main | x, y
     st7735.Line(127, 0, 0, 63, $FFFF)
     st7735.Circle(64, 32, 32, $1F00)
     st7735.Box(0, 0, 127, 63, $FF00, FALSE)
-    st7735.BGColor($0000)
-    st7735.FGColor($FFFF)
     st7735.Position(0, 0)
     st7735.Str(string("Ready."))
 
@@ -77,6 +76,7 @@ PUB Setup
         ser.str(string("ST7735 driver started", ser#CR, ser#LF))
         st7735.FontAddress(fnt.BaseAddr)
         st7735.FontSize(6, 8)
+        st7735.Defaults
     else
         ser.str(string("ST7735 driver failed to start - halting", ser#CR, ser#LF))
         st7735.Stop

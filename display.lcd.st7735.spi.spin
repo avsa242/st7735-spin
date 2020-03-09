@@ -14,9 +14,6 @@
 
 CON
 
-    MAX_COLOR           = 65535
-'   MAX_COLOR           = 262144
-
 ' Subpixel order
     RGB                 = 0
     BGR                 = 1
@@ -77,9 +74,8 @@ PUB Start(CS_PIN, SCK_PIN, SDA_PIN, DC_PIN, RESET_PIN, drawbuffer_address): okay
         _disp_height := 128
         _disp_xmax := _disp_width-1
         _disp_ymax := _disp_height-1
-'        _buff_sz := (_disp_width * _disp_height)' * 3 ' too big for P1 RAM
+        _buff_sz := (_disp_width * _disp_height)' * 3 ' too big for P1 RAM
 '        Reset
-        _buff_sz := 16384
         Address(drawbuffer_address)
         return okay
 
@@ -89,6 +85,66 @@ PUB Stop
 
     'Powered(FALSE)
     spi.Stop
+
+PUB Defaults | tmp[4]
+
+'rcmd1
+    writeReg(core#SOFT_RESET, 0, 0)
+    time.MSleep(150)
+
+    writeReg(core#SLPOUT, 0, 0)
+    time.MSleep(500)
+
+    tmp.byte[0] := $01
+    tmp.byte[1] := $2c
+    tmp.byte[2] := $2d
+    writeReg(core#FRMCTR1, 3, @tmp)
+
+    tmp.byte[0] := $01
+    tmp.byte[1] := $2c
+    tmp.byte[2] := $2d
+    writeReg(core#FRMCTR2, 3, @tmp)
+
+    tmp.byte[0] := $01
+    tmp.byte[1] := $2c
+    tmp.byte[2] := $2d
+    tmp.byte[3] := $01
+    tmp.byte[4] := $2c
+    tmp.byte[5] := $2d
+    writeReg(core#FRMCTR3, 6, @tmp)
+
+    tmp := $07
+    writeReg(core#INVCTR, 1, @tmp)
+
+    tmp.byte[0] := $a2
+    tmp.byte[1] := $02
+    tmp.byte[2] := $84
+    writeReg(core#PWCTR1, 3, @tmp)
+
+    tmp := $c5
+    writeReg(core#PWCTR2, 1, @tmp)
+
+    PowerControl(3, $0A, $00)
+    PowerControl(4, $8A, $2A)
+    PowerControl(5, $8A, $EE)
+
+    VCOMVoltage(2_850, -0_575)
+    DisplayInverted(FALSE)
+
+    MirrorH(TRUE)
+    MirrorV(TRUE)
+    SubpixelOrder(BGR)
+
+    ColorDepth(16)
+    DisplayBounds(2, 3, 129, 129)   '00 02 00 7F+02  00 03 00 9F+01
+
+'part3 red/green tab
+    GammaTableP(@gammatable_pos)
+    GammaTableN(@gammatable_neg)
+
+    PartialDisplay(FALSE)
+    DisplayVisible(TRUE)
+
 
 PUB Address(addr)
 
@@ -227,14 +283,14 @@ PUB Powered(enabled) | tmp
 '120ms between states
 'sleep in $10 when using display off
 }
-{
+
 PUB Reset
 ' Reset the display controller
     io.Low(_RESET)
     time.USleep(10)
     io.High(_RESET)
     time.MSleep(5)
-}
+
 PUB PowerControl(opmode, Isource, boost_clkdiv) | tmp
 ' Set partial mode/full-colors power control
 '   Valid values:
@@ -291,69 +347,6 @@ PUB SubpixelOrder(order) | tmp
     _madctl &= core#MASK_RGB
     _madctl := (_madctl | order) & core#MADCTL_MASK
     writeReg(core#MADCTL, 1, @_madctl)
-
-PUB red_greentabinit | tmp[4]
-
-'rcmd1
-    writeReg(core#SOFT_RESET, 0, 0)
-    time.MSleep(150)
-
-    writeReg(core#SLPOUT, 0, 0)
-    time.MSleep(500)
-
-    tmp.byte[0] := $01
-    tmp.byte[1] := $2c
-    tmp.byte[2] := $2d
-    writeReg(core#FRMCTR1, 3, @tmp)
-
-    tmp.byte[0] := $01
-    tmp.byte[1] := $2c
-    tmp.byte[2] := $2d
-    writeReg(core#FRMCTR2, 3, @tmp)
-
-    tmp.byte[0] := $01
-    tmp.byte[1] := $2c
-    tmp.byte[2] := $2d
-    tmp.byte[3] := $01
-    tmp.byte[4] := $2c
-    tmp.byte[5] := $2d
-    writeReg(core#FRMCTR3, 6, @tmp)
-
-    tmp := $07
-    writeReg(core#INVCTR, 1, @tmp)
-
-    tmp.byte[0] := $a2
-    tmp.byte[1] := $02
-    tmp.byte[2] := $84
-    writeReg(core#PWCTR1, 3, @tmp)
-
-    tmp := $c5
-    writeReg(core#PWCTR2, 1, @tmp)
-
-'    tmp.byte[0] := $0a
-'    tmp.byte[1] := $00
-'    writeReg(core#PWCTR3, 2, @tmp)
-
-    PowerControl(3, $0A, $00)
-    PowerControl(4, $8A, $2A)
-    PowerControl(5, $8A, $EE)
-
-    VCOMVoltage(2_850, -0_575)
-    DisplayInverted(FALSE)
-
-    MirrorH(TRUE)
-    MirrorV(TRUE)
-    SubpixelOrder(BGR)
-
-    ColorDepth(16)
-    DisplayBounds(2, 3, 129, 129)   '00 02 00 7F+02  00 03 00 9F+01
-
-'part3 red/green tab
-    GammaTableP(@gammatable_pos)
-    GammaTableN(@gammatable_neg)
-
-    PartialDisplay(FALSE)
-    DisplayVisible(TRUE)
 
 PUB Update | tmp
 
