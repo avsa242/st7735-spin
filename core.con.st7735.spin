@@ -15,7 +15,7 @@ CON
 ' SPI Configuration
     CPOL                        = 0
     SCK_DELAY                   = 1
-    SCK_MAX_FREQ                = 15_151_515
+    SCK_MAX_FREQ                = 15_151_515    ' According to datasheet; seems to work fine at 20MHz, though
     MOSI_BITORDER               = 5             'MSBFIRST
     MISO_BITORDER               = 0             'MSBPRE
 

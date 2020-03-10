@@ -5,7 +5,7 @@
     Description: Driver for Sitronix ST7735-based displays (4W SPI)
     Copyright (c) 2020
     Started Mar 07, 2020
-    Updated Mar 09, 2020
+    Updated Mar 10, 2020
     See end of file for terms of use.
     --------------------------------------------
 }
@@ -55,7 +55,8 @@ OBJ
 PUB Null
 ''This is not a top-level object
 
-PUB Start(CS_PIN, SCK_PIN, SDA_PIN, DC_PIN, RESET_PIN, drawbuffer_address): okay
+PUB Start(CS_PIN, SCK_PIN, SDA_PIN, DC_PIN, RESET_PIN, disp_width, disp_height, drawbuffer_address): okay
+
     if okay := spi.Start(CS_PIN, SCK_PIN, SDA_PIN, SDA_PIN)
         time.MSleep (1)                                     'Add startup delay appropriate to your device (consult its datasheet)
         _SDA := SDA_PIN
@@ -68,11 +69,11 @@ PUB Start(CS_PIN, SCK_PIN, SDA_PIN, DC_PIN, RESET_PIN, drawbuffer_address): okay
         io.High(_DC)
         io.Output(_DC)
 
-        _disp_width := 128
-        _disp_height := 128
+        _disp_width := disp_width
+        _disp_height := disp_height
         _disp_xmax := _disp_width-1
         _disp_ymax := _disp_height-1
-        _buff_sz := (_disp_width * _disp_height)' * 3 ' too big for P1 RAM
+        _buff_sz := (_disp_width * _disp_height) * 2
 '        Reset
         Address(drawbuffer_address)
         return okay
@@ -86,7 +87,6 @@ PUB Stop
 
 PUB Defaults | tmp[4]
 
-'rcmd1
     writeReg(core#SOFT_RESET, 0, 0)
     time.MSleep(150)
 
@@ -120,9 +120,8 @@ PUB Defaults | tmp[4]
     SubpixelOrder(BGR)
 
     ColorDepth(16)
-    DisplayBounds(2, 3, 129, 129)   '00 02 00 7F+02  00 03 00 9F+01
+    DisplayBounds(2, 3, 129, 129)
 
-'part3 red/green tab
     GammaTableP(@gammatable_pos)
     GammaTableN(@gammatable_neg)
 
@@ -135,7 +134,7 @@ PUB Address(addr)
     _draw_buffer := addr
 
 PUB ClearAccel
-
+' Dummy method
     return 0
 
 PUB ColorDepth(format) | tmp
@@ -341,7 +340,7 @@ PUB Reset
     time.MSleep(5)
 
 PUB PowerControl(opmode, Isource, boost_clkdiv) | tmp
-' Set partial mode/full-colors power control
+' Set partial mode/full-colors power control    XXX rewrite - currently allows any params after opmode
 '   Valid values:
 '       opmode: Settings applied to operating mode
 '           3: Normal mode/full color
@@ -398,11 +397,11 @@ PUB SubpixelOrder(order) | tmp
     writeReg(core#MADCTL, 1, @_madctl)
 
 PUB Update | tmp
-
+' Write the draw buffer to the display
     writeReg(core#RAMWR, _buff_sz, _draw_buffer)
 
 PUB VCOMVoltage(high_mV, low_mV)
-' Set VCOM high and low voltage levels, in millivolts
+' Set VCOM high and low voltage levels, in millivolts   XXX rewrite - this applies to ST7735's, not ST7735R's
 '   Valid values:
 '       high_mV: 2_500..5_000 (in increments of 25mV)   Default: 4_525
 '       low_mV: -2_400..0_000 (in increments of 25mV)   Default: -0_575
