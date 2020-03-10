@@ -1,10 +1,10 @@
 {
     --------------------------------------------
-    Filename: ST7735-Demo.spin
+    Filename: ST7735-Demo.spin2
     Author: Jesse Burt
-    Description: Simple demo of the ST7735 driver
+    Description: Simple demo of the ST7735 driver (P2 version)
     Copyright (c) 2020
-    Started Mar 8, 2020
+    Started Mar 10, 2020
     Updated Mar 10, 2020
     See end of file for terms of use.
     --------------------------------------------
@@ -12,22 +12,31 @@
 
 CON
 
-    _clkmode    = cfg#_CLKMODE
-    _xinfreq    = cfg#_XINFREQ
+    XTAL        = cfg#XTAL
+    XDIV        = cfg#XDIV
+    XMUL        = cfg#XMUL
+    XDIVP       = cfg#XDIVP
+    XOSC        = cfg#XOSC
+    XSEL        = cfg#XSEL
+    XPPPP       = cfg#XPPPP
+    CLOCKFREQ   = cfg#CLOCKFREQ
+    SETFREQ     = cfg#SETFREQ
+    ENAFREQ     = cfg#ENAFREQ
 
-    CS          = 0
-    DC          = 1
-    RST         = 2
-    SDA         = 3
-    SCK         = 4
+    CS          = 50
+    DC          = 48
+    RST         = 55
+    SDA         = 52
+    SCK         = 54
+    SCK_HZ      = 20_000_000
 
     LED         = cfg#LED1
-    SER_RX      = 31
-    SER_TX      = 30
-    SER_BAUD    = 115_200
+    SER_RX      = cfg#SER_RX
+    SER_TX      = cfg#SER_TX
+    SER_BAUD    = 2_000_000
 
     WIDTH       = 128
-    HEIGHT      = 64
+    HEIGHT      = 128
     BPP         = 16
     BPL         = WIDTH * (BPP/8)
     BUFFSZ      = (WIDTH * HEIGHT) * 2  'in BYTEs
@@ -39,11 +48,11 @@ CON
 
 OBJ
 
-    cfg     : "core.con.boardcfg.flip"
+    cfg     : "core.con.boardcfg.p2eval"
     ser     : "com.serial.terminal.ansi"
     time    : "time"
     io      : "io"
-    display : "display.lcd.st7735.spi.spin"
+    display : "display.lcd.st7735.spi.spin2"
     int     : "string.integer"
     fnt     : "font.5x8"
 
@@ -61,32 +70,30 @@ PUB Main
     _ser_row := 3
     Setup
 
-    Demo_Text(1024)
+    Demo_Text(320)
     time.Sleep(2)
 
-    Demo_MEMScroller ($0000, $FFFF)
+    Demo_MEMScroller ($0000, $0FFF)
     time.Sleep(2)
     display.ClearAll
 
-    Demo_Circle (100)
+    Demo_Circle (50)
     time.Sleep (2)
     display.ClearAll
 
-    Demo_Sine (500)
+    Demo_Sine (50)
     time.Sleep (2)
     display.ClearAll
 
-    Demo_LineBitmap (1_000)
+    Demo_LineBitmap (50)
     time.Sleep (2)
     display.ClearAll
 
-'    display.DisplayBounds(2, 3, 129, 129)    'Need to reset this here because PlotAccel changes it
-
-    Demo_PlotBitmap (1000)
+    Demo_PlotBitmap (50)
     time.Sleep (2)
     display.ClearAll
 
-    Demo_BoxBitmap(250)
+    Demo_BoxBitmap(50)
     time.Sleep (2)
     display.ClearAll
 
@@ -225,32 +232,33 @@ PUB FPS_mon
         ser.Str (int.DecZeroed (_bench_iter, 3))
         _bench_iter := 0
 
-PUB RND(max_val) | i
-' Returns a random number between 0 and max_val
-    i := ?_rndseed
-    i >>= 16
-    i *= (max_val + 1)
-    i >>= 16
+PUB RND(maxval) | i
 
+    asm
+        getrnd i
+        shr i, #16
+        add maxval, #1
+        mul i, maxval
+        shr i, #16
+    endasm
     return i
 
-PUB Sin(angle)
-' Sin angle is 13-bit; Returns a 16-bit signed value
-    result := angle << 1 & $FFE
-    if angle & $800
-       result := word[$F000 - result]
-    else
-       result := word[$E000 + result]
-    if angle & $1000
-       -result
+PUB Sin(angle) | tmp
+' Return the sine of angle
+    asm
+        shl     angle, #20
+        qrotate ##100000, angle
+        getqy   tmp               'Can't getqy directly into result - too complex for inline asm
+    endasm
+    return tmp
 
 PUB Setup
 
+    clkset(ENAFREQ, CLOCKFREQ, XSEL)
     repeat until _ser_cog := ser.StartRXTX (SER_RX, SER_TX, 0, SER_BAUD)
-    time.MSleep(100)
     ser.Clear
     ser.Str(string("Serial terminal started", ser#CR, ser#LF))
-    if _display_cog := display.Start (CS, SCK, SDA, DC, RST, WIDTH, HEIGHT, @_framebuff)
+    if _display_cog := display.Start (CS, SCK, SDA, DC, RST, SCK_HZ, WIDTH, HEIGHT, @_framebuff)
         ser.Str(string("ST7735 driver started", ser#CR, ser#LF))
         display.FontAddress(fnt.BaseAddr)
         display.FontSize(6, 8)
@@ -267,9 +275,9 @@ PUB Stop
     if _bench_cog
         cogstop(_bench_cog)
     time.MSleep (5)
-    ser.Stop
+    cogstop(cogid)
 
-#include "lib.utility.spin"
+#include "lib.utility.spin2"
 
 DAT
 {
