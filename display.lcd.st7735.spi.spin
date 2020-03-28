@@ -45,6 +45,8 @@ CON
     BCLK4_8             = 6
     BCLK4_16            = 7
 
+    AUTO                = 0
+
 VAR
 
     long _ptr_framebuffer
@@ -94,7 +96,7 @@ PUB Stop
     spi.Stop
 
 PUB Defaults | tmp[4]
-
+' Apply power-on-reset default settings
     writeReg(core#SOFT_RESET, 0, 0)
     time.MSleep(150)
 
@@ -104,17 +106,13 @@ PUB Defaults | tmp[4]
     FramerateCtrl(1, 44, 45, 0, 0, 0)
     FramerateCtrl(1, 44, 45, 1, 44, 45)
 
-    tmp := $07
+    tmp := $03
     writeReg(core#INVCTR, 1, @tmp)
-
-    tmp.byte[0] := $a2
-    tmp.byte[1] := $02
-    tmp.byte[2] := $84
-    writeReg(core#PWCTR1, 3, @tmp)
 
     tmp := $c5
     writeReg(core#PWCTR2, 1, @tmp)
 
+    PowerControl1(4_900, 4_600, -4_600, AUTO)
     PowerControl(3, $0A, $00)
     PowerControl(4, $8A, $2A)
     PowerControl(5, $8A, $EE)
@@ -137,6 +135,48 @@ PUB Defaults | tmp[4]
     DisplayVisibility(NORMAL)
 
 PUB DefaultsCommon
+
+    writeReg(core#SOFT_RESET, 0, 0)
+    time.MSleep(150)
+
+    Powered(TRUE)
+
+    FramerateCtrl(1, 44, 45, 0, 0, 0)
+    FramerateCtrl(1, 44, 45, 0, 0, 0)
+    FramerateCtrl(1, 44, 45, 1, 44, 45)
+
+    tmp := $07
+    writeReg(core#INVCTR, 1, @tmp)
+
+    tmp.byte[0] := $a2
+    tmp.byte[1] := $02
+    tmp.byte[2] := $84
+    writeReg(core#PWCTR1, 3, @tmp)
+
+    tmp := $c5
+    writeReg(core#PWCTR2, 1, @tmp)
+
+    PowerControl1(5_000, 4_600, -4_600, AUTO)
+    PowerControl(3, $0A, $00)
+    PowerControl(4, $8A, $2A)
+    PowerControl(5, $8A, $EE)
+
+    COMVoltageLevel(-0_525)
+    DisplayInverted(FALSE)
+
+    MirrorH(TRUE)
+    MirrorV(TRUE)
+    SubpixelOrder(BGR)
+
+    ColorDepth(16)
+    DisplayBounds(2, 3, 129, 130)
+
+    GammaTableP(@gammatable_pos)
+    GammaTableN(@gammatable_neg)
+
+    PartialArea(0, 161)                     ' Can be 0, 159 also, depending on configuration of GM pins
+    OpMode(NORMAL)
+    DisplayVisibility(NORMAL)
 
 PUB Contrast(level)
 ' Dummy method
@@ -421,6 +461,43 @@ PUB PowerControl(mode, Isource, boost_clkdiv) | tmp
             return FALSE
 }
     writeReg(core#PWCTR3 + mode, 2, @Isource)
+
+PUB PowerControl1(AVDD, GVDD, GVCL, mode) | tmp
+' Set LCD supply voltages, in millivolts
+'   Valid values:
+'       AVDD: 4_500..5_100, in increments of 100 (default: 4_900)
+'       GVDD: 3_150..4_700, in increments of 50 (default: 4_600)
+'       GVCL: -4_700..-3_150, in increments of 50 (default: -4_600)
+'       mode: 2, 3, AUTO (0) (default: AUTO)
+'   Any other value is ignored
+    case AVDD
+        4_500..5_100:
+            AVDD := ((AVDD / 100) - 45) << core#FLD_AVDD
+        OTHER:
+            return FALSE
+
+    case GVDD
+        3_150..4_700:
+            GVDD := ((4_700 - GVDD) / 50) & core#BITS_VRHP
+        OTHER:
+            return FALSE
+
+    case GVCL
+        -4_700..-3_150:
+            GVCL := ((4_700 - (GVCL * -1) ) / 50) & core#BITS_VRHN
+        OTHER:
+            return FALSE
+
+    case mode
+        2, 3, AUTO:
+            mode := lookdownz(mode: 2, 3, AUTO) << core#FLD_MODE
+            mode |= %000100
+
+    tmp.byte[0] := AVDD | VRHP
+    tmp.byte[1] := VRHN
+    tmp.byte[2] := mode
+
+    writeReg(core#PWCTR1, 3, @tmp)
 
 PUB SubpixelOrder(order) | tmp
 ' Set subpixel color order
