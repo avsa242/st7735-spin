@@ -15,14 +15,14 @@
 CON
 
 ' Display visibility modes
-    ALL_OFF             = 0
-    NORMAL              = 1
+    NORMAL              = 0
+    ALL_OFF             = 1
     INVERTED            = 2
 
 ' Operating modes
-    PARTIAL             = 0
-'   NORMAL              = 1
-    IDLE                = 2
+'   NORMAL              = 0
+    IDLE                = 1
+    PARTIAL             = 2
 
 ' Subpixel order
     RGB                 = 0
@@ -53,11 +53,11 @@ VAR
     byte _SDA, _SCK, _RESET, _DC
     byte _disp_width, _disp_height, _disp_xmax, _disp_ymax
 '   Shadow registers
-    byte _colmod, _madctl
+    byte _colmod, _madctl, _opmode
 
 OBJ
 
-    spi : "com.spi.fast"                                             'PASM SPI Driver
+    spi : "com.spi.fast"
     core: "core.con.st7735"
     time: "time"
     io  : "io"
@@ -68,7 +68,6 @@ PUB Null
 PUB Start(CS_PIN, SCK_PIN, SDA_PIN, DC_PIN, RESET_PIN, disp_width, disp_height, drawbuffer_address): okay
 
     if okay := spi.Start(CS_PIN, SCK_PIN, SDA_PIN, SDA_PIN)
-        time.MSleep (1)                                     'Add startup delay appropriate to your device (consult its datasheet)
         _SDA := SDA_PIN
         _SCK := SCK_PIN
         _RESET := RESET_PIN
@@ -87,7 +86,6 @@ PUB Start(CS_PIN, SCK_PIN, SDA_PIN, DC_PIN, RESET_PIN, disp_width, disp_height, 
         Reset
         Address(drawbuffer_address)
         return okay
-
     return FALSE                                                'If we got here, something went wrong
 
 PUB Stop
@@ -102,9 +100,9 @@ PUB Defaults | tmp[4]
 
     Powered(TRUE)
 
-    FramerateCtrl(1, 1, 44, 45, 0, 0, 0)
-    FramerateCtrl(2, 1, 44, 45, 0, 0, 0)
-    FramerateCtrl(3, 1, 44, 45, 1, 44, 45)
+    FramerateCtrl(1, 44, 45, 0, 0, 0)
+    FramerateCtrl(1, 44, 45, 0, 0, 0)
+    FramerateCtrl(1, 44, 45, 1, 44, 45)
 
     tmp := $07
     writeReg(core#INVCTR, 1, @tmp)
@@ -236,25 +234,21 @@ PUB DisplayVisibility(mode) | inv_state
     writeReg(inv_state, 0, 0)
     time.MSleep(120)
 
-PUB FrameRateCtrl(mode, line_period, f_porch, b_porch, lim_line_period, lim_f_porch, lim_b_porch) | tmp[2], nr_bytes
+PUB FrameRateCtrl(line_period, f_porch, b_porch, lim_line_period, lim_f_porch, lim_b_porch) | tmp[2], nr_bytes
 ' Set frame frequency
 '   Valid values:
-'       mode:
-'           1: Normal mode/full colors
-'           2: Idle mode/8 colors
-'           3: Partial mode/full colors
 '       line_period: 0..15
 '       f_porch: 0..63
 '       b_porch: 0..63
-'       lim_* variants (effective when in Line Inversion Mode - set only in opmode 3) - same as above
+'       lim_* variants (effective when in Line Inversion Mode - set only in OpMode(PARTIAL)) - same as above
 '           - ignored when opmode is 1 or 2
 '   Any other value for opmode returns the last calculated frame frequency
 '   Any other values for other parameters are ignored
     result := 0
-    case mode
-        1, 2:
+    case _opmode
+        NORMAL, IDLE:
             nr_bytes := 3
-        3:
+        PARTIAL:
             nr_bytes := 6
         OTHER:
             return _framerate
@@ -277,7 +271,7 @@ PUB FrameRateCtrl(mode, line_period, f_porch, b_porch, lim_line_period, lim_f_po
         OTHER:
             return
 
-    if mode == 3
+    if _opmode == PARTIAL
         case lim_line_period
             0..15:
                 tmp.byte[3] := lim_line_period
@@ -296,10 +290,9 @@ PUB FrameRateCtrl(mode, line_period, f_porch, b_porch, lim_line_period, lim_f_po
             OTHER:
                 return
 
-    mode -= 1                                             ' Use as offset from FRMCTR1 register (+0, 1, or 2)
     result := _framerate := core#FOSC / ((line_period * 2 + 40) * (_disp_height + f_porch + b_porch))
 
-    writeReg(core#FRMCTR1 + mode, nr_bytes, @tmp)
+    writeReg(core#FRMCTR1 + _opmode, nr_bytes, @tmp)
 
 PUB GammaTableN(buff_addr)
 ' Modify gamma table (negative polarity)
@@ -346,8 +339,8 @@ PUB MirrorV(enabled) | tmp
 PUB OpMode(mode) | tmp
 ' Set operating mode
 '   Valid values:
-'       PARTIAL (0): Partial display mode
-'       NORMAL (1): Normal display mode
+'       NORMAL (0): Normal display mode
+'       PARTIAL (1): Partial display mode
 '       IDLE (2): Idle/reduced color (8 color) mode
 '   Any other value is ignored
     case mode
@@ -360,6 +353,9 @@ PUB OpMode(mode) | tmp
             writeReg(core#IDMON, 0, 0)
         OTHER:
             return FALSE
+
+    _opmode := mode                                         ' Update VAR used by some methods
+                                                            '   to read current state
 
 PUB PartialArea(sy, ey) | tmp
 ' Define visible area (rows) of display when operting in partial-display mode

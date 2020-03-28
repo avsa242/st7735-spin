@@ -20,11 +20,11 @@ CON
     SER_TX      = 30
     SER_BAUD    = 115_200
 
-    RES_PIN     = 4
+    CS_PIN      = 4
     DC_PIN      = 3
-    CS_PIN      = 2
-    CLK_PIN     = 1
-    DIN_PIN     = 0
+    RESET_PIN   = 2
+    SDA_PIN     = 1
+    SCK_PIN     = 0
 
     WIDTH       = 128
     HEIGHT      = 64
@@ -508,7 +508,7 @@ PUB Setup
     time.MSleep(30)
     ser.Clear
     ser.str(string("Serial terminal started", ser#CR, ser#LF))
-    if _lcd_cog := lcd.Start (CS_PIN, DC_PIN, DIN_PIN, CLK_PIN, RES_PIN, @_framebuff)
+    if _lcd_cog := lcd.Start (CS_PIN, SCK_PIN, SDA_PIN, DC_PIN, RESET_PIN, WIDTH, HEIGHT, @_framebuff)
         ser.str(string("ST7735 driver started", ser#CR, ser#LF))
         lcd.FontAddress(fnt.BaseAddr)
         lcd.FontSize(6, 8)
