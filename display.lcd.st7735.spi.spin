@@ -47,6 +47,10 @@ CON
 
     AUTO                = 0
 
+    AVDD_X2_VGH25       = 0
+    AVDD_X3             = 1
+    AVDD_X3_VGH25       = 2
+
 VAR
 
     long _ptr_framebuffer
@@ -95,7 +99,7 @@ PUB Stop
     Powered(FALSE)
     spi.Stop
 
-PUB Defaults | tmp[4]
+PUB Defaults | tmp
 ' Apply power-on-reset default settings
     writeReg(core#SOFT_RESET, 0, 0)
     time.MSleep(150)
@@ -109,10 +113,8 @@ PUB Defaults | tmp[4]
     tmp := $03
     writeReg(core#INVCTR, 1, @tmp)
 
-    tmp := $c5
-    writeReg(core#PWCTR2, 1, @tmp)
-
     PowerControl1(4_900, 4_600, -4_600, AUTO)
+    PowerControl2(2_400, AVDD_X3, -10_000)
     PowerControl(3, $0A, $00)
     PowerControl(4, $8A, $2A)
     PowerControl(5, $8A, $EE)
@@ -134,7 +136,7 @@ PUB Defaults | tmp[4]
     OpMode(NORMAL)
     DisplayVisibility(NORMAL)
 
-PUB DefaultsCommon
+PUB DefaultsCommon | tmp
 
     writeReg(core#SOFT_RESET, 0, 0)
     time.MSleep(150)
@@ -148,15 +150,8 @@ PUB DefaultsCommon
     tmp := $07
     writeReg(core#INVCTR, 1, @tmp)
 
-    tmp.byte[0] := $a2
-    tmp.byte[1] := $02
-    tmp.byte[2] := $84
-    writeReg(core#PWCTR1, 3, @tmp)
-
-    tmp := $c5
-    writeReg(core#PWCTR2, 1, @tmp)
-
     PowerControl1(5_000, 4_600, -4_600, AUTO)
+    PowerControl2(2_400, AVDD_X3, -10_000)
     PowerControl(3, $0A, $00)
     PowerControl(4, $8A, $2A)
     PowerControl(5, $8A, $EE)
@@ -493,11 +488,39 @@ PUB PowerControl1(AVDD, GVDD, GVCL, mode) | tmp
             mode := lookdownz(mode: 2, 3, AUTO) << core#FLD_MODE
             mode |= %000100
 
-    tmp.byte[0] := AVDD | VRHP
-    tmp.byte[1] := VRHN
+    tmp.byte[0] := AVDD | GVDD
+    tmp.byte[1] := GVCL
     tmp.byte[2] := mode
 
     writeReg(core#PWCTR1, 3, @tmp)
+
+PUB PowerControl2(V25, VGH, VGL) | tmp
+' Set LCD supply voltages, in millivolts
+'   Valid values:
+'       V25: 2_100, 2_200, 2_300, 2_400 (default: 2_400)
+'       VGH: AVDD_X2_VGH25 (0), AVDD_X3 (1), AVDD_X3_VGH25 (2) (default: AVDD3X)
+'       VGL: -13_000, -12_500, -10_000, -7_500 (default: -10_000)
+    case V25
+        2_100, 2_200, 2_300, 2_400:
+            V25 := lookdownz(V25: 2_100, 2_200, 2_300, 2_400) << core#FLD_VGH25
+        OTHER:
+            return FALSE
+
+    case VGH
+        AVDD_X2_VGH25, AVDD_X3, AVDD_X3_VGH25:
+            VGH := lookdownz(VGH: AVDD_X2_VGH25, AVDD_X3, AVDD_X3_VGH25) & core#BITS_VGHBT
+        OTHER:
+            return FALSE
+
+    case VGL
+        -13_000, -12_500, -10_000, -7_500:
+            VGL := lookdownz(VGL: -7_500, -10_000, -12_500, -13_000) << core#FLD_VGLSEL
+        OTHER:
+            return FALSE
+
+    tmp := V25 | VGH | VGL
+
+    writeReg(core#PWCTR2, 1, @tmp)
 
 PUB SubpixelOrder(order) | tmp
 ' Set subpixel color order
