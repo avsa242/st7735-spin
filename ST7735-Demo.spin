@@ -4,7 +4,7 @@
     Description: Demo of the ST7735 driver
     Author: Jesse Burt
     Copyright (c) 2020
-    Started: Nov 3, 2019
+    Started: Mar 10, 2020
     Updated: Mar 28, 2020
     See end of file for terms of use.
     --------------------------------------------
