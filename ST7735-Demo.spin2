@@ -24,16 +24,16 @@ CON
     ENAFREQ     = cfg#ENAFREQ
 
     LED         = cfg#LED1
-    SER_RX      = 31
-    SER_TX      = 30
-    SER_BAUD    = 115_200
+    SER_RX      = cfg#SER_RX
+    SER_TX      = cfg#SER_TX
+    SER_BAUD    = 2_000_000
 
     CS_PIN      = 50
     DC_PIN      = 48
     RESET_PIN   = 55
     SDA_PIN     = 52
     SCK_PIN     = 54
-    SCK_HZ      = 20_000_000
+    SCK_HZ      = 6_500_000
 
     WIDTH       = 128
     HEIGHT      = 128
@@ -449,24 +449,25 @@ PUB Demo_Wander(testtime) | iteration, x, y, d, c
     Report(testtime, iteration)
     return iteration
 
-PUB RND(max_val) | i
-' Returns a random number between 0 and max_val
-    i := ?_rndseed
-    i >>= 16
-    i *= (max_val + 1)
-    i >>= 16
+PUB RND(maxval) | i
 
+    asm
+        getrnd i
+        shr i, #16
+        add maxval, #1
+        mul i, maxval
+        shr i, #16
+    endasm
     return i
 
-PUB Sin(angle)
-' Sin angle is 13-bit; Returns a 16-bit signed value
-    result := angle << 1 & $FFE
-    if angle & $800
-       result := word[$F000 - result]
-    else
-       result := word[$E000 + result]
-    if angle & $1000
-       -result
+PUB Sin(angle) | tmp
+' Return the sine of angle
+    asm
+        shl     angle, #20
+        qrotate ##100000, angle
+        getqy   tmp               'Can't getqy directly into result - too complex for inline asm
+    endasm
+    return tmp
 
 PRI Report(testtime, iterations)
 
@@ -522,7 +523,7 @@ PUB Setup
         ser.str(string("ST7735 driver started", ser#CR, ser#LF))
         lcd.FontAddress(fnt.BaseAddr)
         lcd.FontSize(6, 8)
-        lcd.DefaultsCommon
+        lcd.Defaults
         lcd.ClearAll
     else
         ser.str(string("ST7735 driver failed to start - halting", ser#CR, ser#LF))
@@ -532,6 +533,7 @@ PUB Setup
 
 PUB Stop
 
+    lcd.DisplayVisibility(lcd#ALL_OFF)
     lcd.Powered (FALSE)
     lcd.Stop
     cogstop(_timer_cog)

@@ -14,6 +14,11 @@
 
 CON
 
+' Display visibility modes
+    ALL_OFF             = 0
+    NORMAL              = 1
+    INVERTED            = 2
+
 ' Subpixel order
     RGB                 = 0
     BGR                 = 1
@@ -37,7 +42,7 @@ CON
 
 VAR
 
-    long _draw_buffer
+    long _ptr_framebuffer
     word _buff_sz
     word _framerate
     byte _CS, _SDA, _SCK, _RESET, _DC
@@ -77,7 +82,7 @@ PUB Start(CS_PIN, SCK_PIN, SDA_PIN, DC_PIN, RESET_PIN, SCK_HZ, disp_width, disp_
         _disp_xmax := _disp_width-1
         _disp_ymax := _disp_height-1
         _buff_sz := (_disp_width * _disp_height) * 2
-'        Reset
+        Reset
         Address(drawbuffer_address)
         return okay
 
@@ -85,16 +90,14 @@ PUB Start(CS_PIN, SCK_PIN, SDA_PIN, DC_PIN, RESET_PIN, SCK_HZ, disp_width, disp_
 
 PUB Stop
 
-    'Powered(FALSE)
-'    spi.Stop
+    Powered(FALSE)
 
 PUB Defaults | tmp[4]
 
     writeReg(core#SOFT_RESET, 0, 0)
     time.MSleep(150)
 
-    writeReg(core#SLPOUT, 0, 0)
-    time.MSleep(500)
+    Powered(TRUE)
 
     FramerateCtrl(1, 1, 44, 45, 0, 0, 0)
     FramerateCtrl(2, 1, 44, 45, 0, 0, 0)
@@ -129,19 +132,23 @@ PUB Defaults | tmp[4]
     GammaTableN(@gammatable_neg)
 
     PartialDisplay(FALSE)
-    DisplayVisible(TRUE)
+    DisplayVisibility(NORMAL)
 
+PUB DefaultsCommon
+
+PUB Contrast(level)
+' Dummy method
 
 PUB Address(addr)
-
-    _draw_buffer := addr
+' Set framebuffer/display buffer address
+    _ptr_framebuffer := addr
 
 PUB ClearAccel
 ' Dummy method
     return 0
 
 PUB ColorDepth(format) | tmp
-' Set color depth/format, in bits per pixel
+' Set expected color format of pixel data, in bits per pixel
 '   Valid values: 12, 16, 18
 '   Any other value returns the current setting
     tmp := $00
@@ -152,12 +159,6 @@ PUB ColorDepth(format) | tmp
             return _colmod & core#BITS_IFPF
 
     writeReg(core#COLMOD, 1, @format)
-
-{
-PUB DeviceID
-
-    readReg(core#RDDID, 3, @result)
-}
 
 PUB DisplayBounds(xs, ys, xe, ye) | tmp
 ' Set display start and end offsets
@@ -187,29 +188,35 @@ PUB DisplayBounds(xs, ys, xe, ye) | tmp
     tmp.byte[3] := ye.byte[0]
     writeReg(core#RASET, 4, @tmp)
 
-PUB DisplayInverted(enabled)
+PUB DisplayInverted(enabled) | tmp
 ' Invert display colors
-'   Valid values: TRUE (-1 or 1), FALSE (0)
-'   Any other value is ignored
     case ||enabled
-        0, 1:
-            enabled := lookupz(||enabled: core#INVOFF, core#INVON)
+        0:
+            DisplayVisibility(NORMAL)
+        1:
+            DisplayVisibility(INVERTED)
         OTHER:
             return FALSE
 
-    writeReg(enabled, 0, 0)
-
-PUB DisplayVisible(enabled)
-' Enable display visiblity
+PUB DisplayVisibility(mode) | inv_state
+' Set display visiblity
 '   NOTE: Doesn't affect display RAM contents.
 '   NOTE: There is a mandatory 120ms delay imposed by calling this method
-    case ||enabled
-        0, 1:
-            enabled := ||enabled + core#DISPOFF
+    case mode
+        ALL_OFF:
+            mode := core#DISPOFF
+        NORMAL:
+            mode := core#DISPON
+            inv_state := core#INVOFF
+        INVERTED:
+            mode := core#DISPON
+            inv_state := core#INVON
+
         OTHER:
             return FALSE
 
-    writeReg(enabled, 0, 0)
+    writeReg(mode, 0, 0)
+    writeReg(inv_state, 0, 0)
     time.MSleep(120)
 
 PUB FrameRateCtrl(opmode, line_period, f_porch, b_porch, lim_line_period, lim_f_porch, lim_b_porch) | tmp[2], nr_bytes
@@ -329,11 +336,16 @@ PUB PartialDisplay(enabled)
 
     writeReg(enabled, 0, 0)
 
-{
 PUB Powered(enabled) | tmp
-'120ms between states
-'sleep in $10 when using display off
-}
+' Enable display power
+    case ||enabled
+        0, 1:
+            enabled := ||enabled + core#SLPIN
+        OTHER:
+            return FALSE
+
+    writeReg(enabled, 0, 0)
+    time.MSleep(120)
 
 PUB Reset
 ' Reset the display controller
@@ -401,7 +413,7 @@ PUB SubpixelOrder(order) | tmp
 
 PUB Update | tmp
 ' Write the draw buffer to the display
-    writeReg(core#RAMWR, _buff_sz, _draw_buffer)
+    writeReg(core#RAMWR, _buff_sz, _ptr_framebuffer)
 
 PUB VCOMVoltage(high_mV, low_mV)
 ' Set VCOM high and low voltage levels, in millivolts   XXX rewrite - this applies to ST7735's, not ST7735R's
