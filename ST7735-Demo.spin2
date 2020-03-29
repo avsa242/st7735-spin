@@ -66,8 +66,8 @@ PUB Main | time_ms, r
     Setup
     lcd.ClearAll
 
-    lcd.MirrorH(TRUE)
-    lcd.MirrorV(TRUE)
+    lcd.MirrorH(TRUE)                                       ' Change these to suit the orientation
+    lcd.MirrorV(TRUE)                                       '   of your display
 
     Demo_Greet
     time.Sleep (5)
@@ -205,7 +205,7 @@ PUB Demo_Greet
     lcd.Str (string("Parallax"))
 
     lcd.Position (0, 2)
-    lcd.Str (string("P2X864M64P @ "))
+    lcd.Str (string("P2X8C4M64P @ "))
 
     lcd.Position (0, 3)
     lcd.Str (int.Dec(clkfreq/1_000_000))
@@ -523,7 +523,7 @@ PUB Setup
         ser.str(string("ST7735 driver started", ser#CR, ser#LF))
         lcd.FontAddress(fnt.BaseAddr)
         lcd.FontSize(6, 8)
-        lcd.Defaults
+        lcd.DefaultsCommon
         lcd.ClearAll
     else
         ser.str(string("ST7735 driver failed to start - halting", ser#CR, ser#LF))

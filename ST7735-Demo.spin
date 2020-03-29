@@ -57,8 +57,8 @@ PUB Main | time_ms, r
     Setup
     lcd.ClearAll
 
-    lcd.MirrorH(FALSE)
-    lcd.MirrorV(FALSE)
+    lcd.MirrorH(TRUE)                                       ' Change these to suit the orientation
+    lcd.MirrorV(TRUE)                                       '   of your display
 
     Demo_Greet
     time.Sleep (5)

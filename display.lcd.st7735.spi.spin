@@ -119,9 +119,9 @@ PUB Defaults | tmp
 
     DisplayInverted(FALSE)
 
-    MirrorH(TRUE)
-    MirrorV(TRUE)
-    SubpixelOrder(BGR)
+    MirrorH(FALSE)
+    MirrorV(FALSE)
+    SubpixelOrder(RGB)
 
     ColorDepth(16)
     DisplayBounds(2, 3, 129, 130)
@@ -134,7 +134,7 @@ PUB Defaults | tmp
     DisplayVisibility(NORMAL)
 
 PUB DefaultsCommon | tmp
-
+' Apply some more common default settings
     Reset
     Powered(TRUE)
 
