@@ -66,8 +66,8 @@ PUB Main | time_ms, r
     Setup
     lcd.ClearAll
 
-    lcd.MirrorH(FALSE)
-    lcd.MirrorV(FALSE)
+    lcd.MirrorH(TRUE)
+    lcd.MirrorV(TRUE)
 
     Demo_Greet
     time.Sleep (5)
