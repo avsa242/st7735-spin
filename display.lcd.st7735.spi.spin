@@ -14,6 +14,8 @@
 
 CON
 
+    MAX_COLOR           = 65535
+
 ' Display visibility modes
     NORMAL              = 0
     ALL_OFF             = 1
