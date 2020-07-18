@@ -5,9 +5,14 @@
     Author: Jesse Burt
     Copyright (c) 2020
     Started: Mar 10, 2020
-    Updated: Jul 14, 2020
+    Updated: Jul 18, 2020 (EOL)
     See end of file for terms of use.
     --------------------------------------------
+
+    NOTE: This demo is deprecated and no longer maintained. It is replaced by
+        the GraphicsDemo.spin2 in the p2-spin-standard-library, which provides
+        the same functionality while supporting multiple display types.
+
 }
 
 CON

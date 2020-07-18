@@ -16,9 +16,11 @@ This is a P8X32A/Propeller, P2X8C4M64P/Propeller 2 driver object for Sitronix ST
 
 ## Requirements
 
+* Presence of bitmap graphics library (lib.gfx.bitmap)
+
 P1/SPIN1:
 * spin-standard-library
-* P1/SPIN1: 1 extra core/cog for the PASM I2C driver
+* P1/SPIN1: 1 extra core/cog for the PASM SPI driver
 
 P2/SPIN2:
 * p2-spin-standard-library
@@ -26,16 +28,15 @@ P2/SPIN2:
 ## Compiler Compatibility
 
 * P1/SPIN1: OpenSpin (tested with 1.00.81)
-* P2/SPIN2: FastSpin (tested with 4.1.10-beta)
+* P2/SPIN2: FastSpin (tested with 4.2.5-beta)
 * ~~BST~~ (incompatible - no preprocessor)
 * ~~Propeller Tool~~ (incompatible - no preprocessor)
 * ~~PNut~~ (incompatible - no preprocessor)
 
 ## Limitations
 
-* Very early in development - may malfunction, or outright fail to build
 * P1 has insufficient RAM to buffer the entire display
-* Currently developed using ST7735R-based display (Adafruit 1.44" #2088); _may_ work with other ST7735 variants
+* Currently developed using ST7735R-based display (Adafruit 1.44" #2088); _may_ work with other ST7735 variants (unfortunately there seem to be several)
 * Reading from display not currently supported
 
 ## TODO
