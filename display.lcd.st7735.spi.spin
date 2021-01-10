@@ -60,7 +60,8 @@ VAR
     word _buff_sz
     word _framerate
     byte _RESET, _DC
-    byte _disp_width, _disp_height, _disp_xmax, _disp_ymax
+    byte _disp_width, _disp_height, _disp_xmax, _disp_ymax, _offs_x, _offs_y
+
 '   Shadow registers
     byte _colmod, _madctl, _opmode
 
@@ -128,7 +129,8 @@ PUB Defaults{} | tmp
     subpixelorder(RGB)
 
     colordepth(16)
-    displaybounds(2, 3, 129, 130)
+    displayoffset(2, 3)
+    displaybounds(0, 0, 127, 127)
 
     gammatablep(@gammatable_pos)
     gammatablen(@gammatable_neg)
@@ -137,8 +139,8 @@ PUB Defaults{} | tmp
     opmode(NORMAL)
     displayvisibility(NORMAL)
 
-PUB DefaultsCommon{} | tmp
-' Apply some more common default settings
+PUB Preset_GreenTab128x128{} | tmp
+' Like defaults, but with settings applicable to green-tabbed 128x128 displays
     reset{}
     powered(TRUE)
 
@@ -162,12 +164,13 @@ PUB DefaultsCommon{} | tmp
     subpixelorder(BGR)
 
     colordepth(16)
-    displaybounds(2, 3, _disp_xmax+2, _disp_ymax+3)
+    displayoffset(2, 3)
+    displaybounds(0, 0, _disp_xmax, _disp_ymax)
 
     gammatablep(@gammatable_pos)
     gammatablen(@gammatable_neg)
 
-    partialarea(0, 161)                     ' Can be 0, 159 also, depending on configuration of GM pins
+    partialarea(0, _disp_ymax)                     ' Can be 0, 159 also, depending on configuration of GM pins
     opmode(NORMAL)
     displayvisibility(NORMAL)
 
@@ -211,6 +214,10 @@ PUB COMVoltageLevel(level)
 
 PUB DisplayBounds(xs, ys, xe, ye) | tmp
 ' Set display start and end offsets
+    xs += _offs_x
+    ys += _offs_y
+    xe += _offs_x
+    ye += _offs_y
     tmp.byte[0] := xs.byte[1]
     tmp.byte[1] := xs.byte[0]
     tmp.byte[2] := xe.byte[1]
@@ -232,6 +239,11 @@ PUB DisplayInverted(state)
             displayvisibility(INVERTED)
         other:
             return
+
+PUB DisplayOffset(x, y)
+' Set display offset
+    _offs_x := 0 #> x <# 127
+    _offs_y := 0 #> y <# 159
 
 PUB DisplayVisibility(mode) | inv_state
 ' Set display visiblity

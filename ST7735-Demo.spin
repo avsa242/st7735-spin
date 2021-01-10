@@ -513,7 +513,7 @@ PUB Setup
         lcd.FontAddress(fnt.BaseAddr)
         lcd.fontscale(1)
         lcd.FontSize(6, 8)
-        lcd.DefaultsCommon
+        lcd.preset_greentab128x128{}
         lcd.ClearAll
     else
         ser.str(string("ST7735 driver failed to start - halting", ser#CR, ser#LF))
