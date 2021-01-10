@@ -137,9 +137,9 @@ PUB Demo_BouncingBall(testtime, radius) | iteration, bx, by, dx, dy
         by += dy
 
         ' if any edge of the screen is reached, change direction
-        if (by =< radius OR by => HEIGHT - radius)
+        if (by =< radius OR by => (YMAX-radius))
             dy *= -1                            ' top/bottom edges
-        if (bx =< radius OR bx => WIDTH - radius)
+        if (bx =< radius OR bx => (XMAX-radius))
             dx *= -1                            ' left/right edges
 
         disp.circle(bx, by, radius, disp#MAX_COLOR)
