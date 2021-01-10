@@ -3,9 +3,9 @@
     Filename: display.lcd.st7735.spi.spin
     Author: Jesse Burt
     Description: Driver for Sitronix ST7735-based displays (4W SPI)
-    Copyright (c) 2020
+    Copyright (c) 2021
     Started Mar 07, 2020
-    Updated Jun 14, 2020
+    Updated Jan 10, 2021
     See end of file for terms of use.
     --------------------------------------------
 }
@@ -59,13 +59,12 @@ VAR
     long _ptr_drawbuffer
     word _buff_sz
     word _framerate
+    word BYTESPERLN
     byte _RESET, _DC
     byte _disp_width, _disp_height, _disp_xmax, _disp_ymax, _offs_x, _offs_y
 
 '   Shadow registers
     byte _colmod, _madctl, _opmode
-
-    byte BYTESPERLN
 
 OBJ
 
@@ -177,13 +176,17 @@ PUB Preset_GreenTab128x128{} | tmp
 PUB Contrast(level)
 ' Dummy method
 
-PUB Address(addr)
+PUB Address(addr): curr_addr
 ' Set framebuffer/display buffer address
-    _ptr_drawbuffer := addr
+    case addr
+        $0000..$7fff-_buff_sz:
+            _ptr_drawbuffer := addr
+        other:
+            return _ptr_drawbuffer
 
 PUB ClearAccel{} | x, y   ' XXX replace hardcoded values
 ' Dummy method
-    displaybounds(2, 3, 129, 130)
+    displaybounds(_offs_x, _offs_y, _disp_xmax+_offs_x, _disp_ymax+_offs_y)
     repeat y from 0 to _disp_ymax
         repeat x from 0 to _disp_xmax
             writereg(core#RAMWR, 2, @_bgcolor)
@@ -411,7 +414,7 @@ PUB PartialArea(sy, ey) | tmp
 #ifdef GFX_DIRECT
 PUB Plot(x, y, color)
 
-    displaybounds(2+x, 3+y, 2+x, 3+y)
+    displaybounds(x+_offs+x, y+_offs_y, x+_offs_x, y+_offs_y)
     writereg(core#RAMWR, 2, @color)
 
 #endif GFX_DIRECT
