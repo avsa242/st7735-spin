@@ -162,7 +162,7 @@ PUB DefaultsCommon{} | tmp
     subpixelorder(BGR)
 
     colordepth(16)
-    displaybounds(2, 3, 129, 130)
+    displaybounds(2, 3, _disp_xmax+2, _disp_ymax+3)
 
     gammatablep(@gammatable_pos)
     gammatablen(@gammatable_neg)
@@ -186,48 +186,31 @@ PUB ClearAccel{} | x, y   ' XXX replace hardcoded values
             writereg(core#RAMWR, 2, @_bgcolor)
 '            plot(x, y, _bgcolor)
 
-PUB ColorDepth(format) | tmp
+PUB ColorDepth(format): curr_fmt
 ' Set expected color format of pixel data, in bits per pixel
 '   Valid values: 12, 16, 18
 '   Any other value returns the current setting
-    tmp := 0
     case format
         12, 16, 18:
             format := lookdown(format: 0, 0, 12, 0, 16, 18)
+            writereg(core#COLMOD, 1, @format)
         other:
-            return _colmod & core#IFPF
+            return lookup(_colmod & core#IFPF_BITS: 0, 0, 12, 0, 16, 18)
 
-    writereg(core#COLMOD, 1, @format)
-
-PUB COMVoltageLevel(mV)
+PUB COMVoltageLevel(level)
 ' Set VCOM voltage level, in millivolts
 '   Valid values:
 '       -0_425..-2_000 (in increments of 25mV)   Default: -0_525
 '   NOTE: Values are rounded to the nearest 25mV
-    case mV
+    case level
         -0_425..-2_000:
-            mV := ((mV * -1) / 25) - 17
+            level := ((level * -1) / 25) - 17
+            writereg(core#VMCTR1, 1, @level)
         other:
             return
 
-    writereg(core#VMCTR1, 1, @mV)
-
 PUB DisplayBounds(xs, ys, xe, ye) | tmp
 ' Set display start and end offsets
-' XXX
-' These definitions are in Adafruit's driver for the green tabbed 1.44" display,
-'   but they didn't quite work for me - the display was shifted up and to the left,
-'   leaving garbage around the right edge:
-'   tmp.byte[0] := 0
-'   tmp.byte[0] := 0
-'   tmp.byte[0] := 0
-'   tmp.byte[0] := $7F
-
-'   tmp.byte[0] := 0
-'   tmp.byte[0] := 0
-'   tmp.byte[0] := 0
-'   tmp.byte[0] := $7F
-
     tmp.byte[0] := xs.byte[1]
     tmp.byte[1] := xs.byte[0]
     tmp.byte[2] := xe.byte[1]
@@ -240,9 +223,9 @@ PUB DisplayBounds(xs, ys, xe, ye) | tmp
     tmp.byte[3] := ye.byte[0]
     writereg(core#RASET, 4, @tmp)
 
-PUB DisplayInverted(enabled) | tmp
+PUB DisplayInverted(state)
 ' Invert display colors
-    case ||(enabled)
+    case ||(state)
         0:
             displayvisibility(NORMAL)
         1:
@@ -270,10 +253,10 @@ PUB DisplayVisibility(mode) | inv_state
     writereg(inv_state, 0, 0)
     time.msleep(120)
 
-PUB FrameRateCtrl(line_period, f_porch, b_porch, lim_line_period, lim_f_porch, lim_b_porch) | tmp[2], nr_bytes
+PUB FrameRateCtrl(ln_per, f_porch, b_porch, lim_ln_per, lim_f_porch, lim_b_porch): curr_frmr | tmp[2], nr_bytes
 ' Set frame frequency
 '   Valid values:
-'       line_period: 0..15
+'       ln_per: 0..15
 '       f_porch: 0..63
 '       b_porch: 0..63
 '       lim_* variants (effective when in Line Inversion Mode - set only in OpMode(PARTIAL)) - same as above
@@ -289,9 +272,9 @@ PUB FrameRateCtrl(line_period, f_porch, b_porch, lim_line_period, lim_f_porch, l
         other:
             return _framerate
 
-    case line_period
+    case ln_per
         0..15:
-            tmp.byte[0] := line_period
+            tmp.byte[0] := ln_per
         other:
             return
 
@@ -308,9 +291,9 @@ PUB FrameRateCtrl(line_period, f_porch, b_porch, lim_line_period, lim_f_porch, l
             return
 
     if _opmode == PARTIAL
-        case lim_line_period
+        case lim_ln_per
             0..15:
-                tmp.byte[3] := lim_line_period
+                tmp.byte[3] := lim_ln_per
             other:
                 return
 
@@ -326,7 +309,8 @@ PUB FrameRateCtrl(line_period, f_porch, b_porch, lim_line_period, lim_f_porch, l
             other:
                 return
 
-    result := _framerate := core#FOSC / ((line_period * 2 + 40) * (_disp_height + f_porch + b_porch))
+    curr_frmr := _framerate := core#FOSC / ((ln_per * 2 + 40) * {
+}   (_disp_height + f_porch + b_porch))
 
     writereg(core#FRMCTR1 + _opmode, nr_bytes, @tmp)
 
@@ -338,7 +322,7 @@ PUB GammaTableP(ptr_buff)
 ' Modify gamma table (negative polarity)
     writereg(core#GMCTRP1, 16, ptr_buff)
 
-PUB InversionCtrl(mask) | tmp
+PUB InversionCtrl(mask)
 ' Set display inversion mode control bitmask
 '   Valid values: %000..%111
 '       0: Dot inversion
@@ -355,41 +339,35 @@ PUB InversionCtrl(mask) | tmp
 
     writereg(core#INVCTR, 1, @mask)
 
-PUB MirrorH(enabled) | tmp
+PUB MirrorH(state): curr_state
 ' Mirror the display, horizontally
 '   Valid values: TRUE (-1 or 1), FALSE (0)
 '   Any other value is ignored
-    tmp := 0
-    tmp := _madctl
-    case ||(enabled)
+    curr_state := _madctl
+    case ||(state)
         0, 1:
-            enabled := ||(enabled) << core#MX
+            state := ||(state) << core#MX
         other:
-            result := (tmp >> core#MX) & %1
-            return
+            return (((curr_state >> core#MX) & 1) == 1)
 
-    _madctl &= core#MX_MASK
-    _madctl := (_madctl | enabled) & core#MADCTL_MASK
+    _madctl := ((_madctl & core#MX_MASK) | state)
     writereg(core#MADCTL, 1, @_madctl)
 
-PUB MirrorV(enabled) | tmp
+PUB MirrorV(state): curr_state
 ' Mirror the display, vertically
 '   Valid values: TRUE (-1 or 1), FALSE (0)
 '   Any other value is ignored
-    tmp := 0
-    tmp := _madctl
-    case ||(enabled)
+    curr_state := _madctl
+    case ||(state)
         0, 1:
-            enabled := ||(enabled) << core#MY
+            state := ||(state) << core#MY
         other:
-            result := (tmp >> core#MY) & %1
-            return
+            return (((curr_state >> core#MY) & 1) == 1)
 
-    _madctl &= core#MY_MASK
-    _madctl := (_madctl | enabled) & core#MADCTL_MASK
+    _madctl := ((_madctl & core#MY_MASK) | state)
     writereg(core#MADCTL, 1, @_madctl)
 
-PUB OpMode(mode) | tmp
+PUB OpMode(mode)
 ' Set operating mode
 '   Valid values:
 '       NORMAL (0): Normal display mode
@@ -407,8 +385,7 @@ PUB OpMode(mode) | tmp
         other:
             return
 
-    _opmode := mode                                         ' Update VAR used by some methods
-                                                            '   to read current state
+    _opmode := mode
 
 PUB PartialArea(sy, ey) | tmp
 ' Define visible area (rows) of display when operating in partial-display mode
@@ -427,19 +404,21 @@ PUB Plot(x, y, color)
 
 #endif GFX_DIRECT
 
-PUB Powered(enabled) | tmp
+PUB Powered(state)
 ' Enable display power
-    case ||(enabled)
+    case ||(state)
         0, 1:
-            enabled := ||(enabled) + core#SLPIN
+            state := ||(state) + core#SLPIN
         other:
             return
 
-    writereg(enabled, 0, 0)
+    writereg(state, 0, 0)
     time.msleep(120)
 
 PUB Reset{}
 ' Reset the display controller
+    io.high(_RESET)
+    time.usleep(10)
     io.low(_RESET)
     time.usleep(10)
     io.high(_RESET)
@@ -473,7 +452,7 @@ PUB PowerControl(mode, ap, sap, bclkdiv1, bclkdiv2, bclkdiv3, bclkdiv4, bclkdiv5
 
     case sap
         OFF, SMALL, MEDLOW, MED, MEDHI, LARGE:
-            sap <<= core#sap
+            sap <<= core#SAP
         other:
             return
 
@@ -576,26 +555,23 @@ PUB PowerControl2(v25, vgh, vgl) | tmp
 
     writereg(core#PWCTR2, 1, @tmp)
 
-PUB SubpixelOrder(order) | tmp
+PUB SubpixelOrder(order): curr_ord
 ' Set subpixel color order
 '   Valid values:
 '       RGB (0): Red-Green-Blue order
 '       BGR (1): Blue-Green-Red order
 '   Any other value returns the current setting
-    tmp := 0
-    tmp := _madctl
+    curr_ord := _madctl
     case order
         0, 1:
             order <<= core#RGB
         other:
-            result := (tmp >> core#RGB) & %1
-            return
+            return ((curr_ord >> core#RGB) & 1)
 
-    _madctl &= core#RGB_MASK
-    _madctl := (_madctl | order) & core#MADCTL_MASK
+    _madctl := ((curr_ord & core#RGB_MASK) | order)
     writereg(core#MADCTL, 1, @_madctl)
 
-PUB Update{} | tmp
+PUB Update{}
 ' Write the draw buffer to the display
     writereg(core#RAMWR, _buff_sz, _ptr_drawbuffer)
 
