@@ -20,9 +20,9 @@ CON
     SER_TX      = 30
     SER_BAUD    = 115_200
 
-    CS_PIN      = 4
-    DC_PIN      = 3
-    RESET_PIN   = 2
+    CS_PIN      = 3
+    DC_PIN      = 2
+    RESET_PIN   = 4
     SDA_PIN     = 1
     SCK_PIN     = 0
 
@@ -511,6 +511,7 @@ PUB Setup
     if _lcd_cog := lcd.Start (CS_PIN, SCK_PIN, SDA_PIN, DC_PIN, RESET_PIN, WIDTH, HEIGHT, @_framebuff)
         ser.str(string("ST7735 driver started", ser#CR, ser#LF))
         lcd.FontAddress(fnt.BaseAddr)
+        lcd.fontscale(1)
         lcd.FontSize(6, 8)
         lcd.DefaultsCommon
         lcd.ClearAll
