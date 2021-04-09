@@ -520,7 +520,7 @@ PUB PowerControl1(avdd, gvdd, gvcl, mode) | tmp
 '   Any other value is ignored
     case avdd
         4_500..5_100:
-            avdd := ((avdd / 100) - 45) << core#avdd
+            avdd := ((avdd / 100) - 45) << core#AVDD
         other:
             return
 
@@ -551,7 +551,7 @@ PUB PowerControl2(v25, vgh, vgl) | tmp
 ' Set LCD supply voltages, in millivolts
 '   Valid values:
 '       V25: 2_100, 2_200, 2_300, 2_400 (default: 2_400)
-'       VGH: AVDD_X2_VGH25 (0), AVDD_X3 (1), AVDD_X3_VGH25 (2) (default: AVDD3X)
+'       VGH: AVDD_X2_VGH25 (0), AVDD_X3 (1), AVDD_X3_VGH25 (2) (default: AVDD_X3)
 '       VGL: -13_000, -12_500, -10_000, -7_500 (default: -10_000)
     case v25
         2_100, 2_200, 2_300, 2_400:
