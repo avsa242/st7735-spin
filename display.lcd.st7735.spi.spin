@@ -4,8 +4,8 @@
     Author: Jesse Burt
     Description: Driver for Sitronix ST7735-based displays (4W SPI)
     Copyright (c) 2021
-    Started Mar 07, 2020
-    Updated Apr 9 , 2021
+    Started Mar 7, 2020
+    Updated Apr 9, 2021
     See end of file for terms of use.
     --------------------------------------------
 }
