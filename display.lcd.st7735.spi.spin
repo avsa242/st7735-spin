@@ -593,7 +593,12 @@ PUB SubpixelOrder(order): curr_ord
 
 PUB Update{}
 ' Write the draw buffer to the display
-    writereg(core#RAMWR, _buff_sz, _ptr_drawbuffer)
+    io.low(_DC)
+    spi.deselectafter(false)
+    spi.wr_byte(core#RAMWR)
+    io.high(_DC)                        ' D/C high = data
+    spi.deselectafter(true)
+    spi.wrblock_lsbf(_ptr_drawbuffer, _buff_sz)
 
 PRI writeReg(reg_nr, nr_bytes, ptr_buff)
 ' Write nr_bytes to device from ptr_buff
@@ -603,14 +608,6 @@ PRI writeReg(reg_nr, nr_bytes, ptr_buff)
             io.low(_DC)                         ' D/C low = command
             spi.deselectafter(true)
             spi.wr_byte(reg_nr)
-            return
-        core#RAMWR:
-            io.low(_DC)
-            spi.deselectafter(false)
-            spi.wr_byte(reg_nr)
-            io.high(_DC)                        ' D/C high = data
-            spi.deselectafter(true)
-            spi.wrblock_lsbf(ptr_buff, nr_bytes)
             return
         ' multi-byte commands
         $2A..$2C, $30, $36, $3A, $B1..$B4, $B6, $C0..$C5, $E0, $E1, $FC:
