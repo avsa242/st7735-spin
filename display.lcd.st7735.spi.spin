@@ -337,7 +337,7 @@ PUB GammaTableN(ptr_buff)
     writereg(core#GMCTRN1, 16, ptr_buff)
 
 PUB GammaTableP(ptr_buff)
-' Modify gamma table (negative polarity)
+' Modify gamma table (positive polarity)
     writereg(core#GMCTRP1, 16, ptr_buff)
 
 PUB InversionCtrl(mask)
@@ -596,7 +596,7 @@ PUB Update{}
     io.low(_DC)
     spi.deselectafter(false)
     spi.wr_byte(core#RAMWR)
-    io.high(_DC)                        ' D/C high = data
+    io.high(_DC)                                ' D/C high = data
     spi.deselectafter(true)
     spi.wrblock_lsbf(_ptr_drawbuffer, _buff_sz)
 
