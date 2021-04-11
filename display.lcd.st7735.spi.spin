@@ -163,16 +163,16 @@ PUB Preset_GreenTab128x128{} | tmp
 
     mirrorh(TRUE)
     mirrorv(TRUE)
-    subpixelorder(BGR)
+    subpixelorder(RGB)
 
     colordepth(16)
-    displayoffset(2, 3)
+    displayoffset(2, 1)
     displaybounds(0, 0, _disp_xmax, _disp_ymax)
 
     gammatablep(@gammatable_pos)
     gammatablen(@gammatable_neg)
 
-    partialarea(0, _disp_ymax)                     ' Can be 0, 159 also, depending on configuration of GM pins
+    partialarea(0, _disp_ymax)
     opmode(NORMAL)
     displayvisibility(NORMAL)
 
