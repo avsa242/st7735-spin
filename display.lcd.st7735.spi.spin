@@ -783,6 +783,8 @@ PUB Reset{}
         time.usleep(10)
         outa[_RESET] := 1
         time.msleep(5)
+    else
+        writereg(core#SOFT_RESET, 0, 0)
 
 PUB SubpixelOrder(order): curr_ord
 ' Set subpixel color order

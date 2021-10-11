@@ -36,7 +36,7 @@ P2/SPIN2:
 
 ## Hardware compatibility
 
-* Developed using ST7735R-based display (Adafruit 1.44" #2088); _may_ work with other ST7735 variants (unfortunately there seem to be several)
+* Developed using ST7735-based (non-R suffix) display (Adafruit 1.44" #2088); _may_ work with other ST7735 variants (unfortunately there seem to be several)
 
 ## Limitations
 

@@ -773,6 +773,8 @@ PUB Reset()
         waitus(10)
         pinh(_RESET)
         waitms(5)
+    else
+        writereg(core.SOFT_RESET, 0, 0)
 
 PUB SubpixelOrder(order=-2): curr_ord
 ' Set subpixel color order
