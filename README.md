@@ -41,7 +41,6 @@ P2/SPIN2:
 ## Limitations
 
 * Reading from display not currently supported
-* No hardware scrolling support
 
 ## TODO
 
