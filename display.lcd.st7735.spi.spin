@@ -80,7 +80,7 @@ PUB Null{}
 
 PUB Startx(CS_PIN, SCK_PIN, SDA_PIN, DC_PIN, RESET_PIN, WIDTH, HEIGHT, ptr_drawbuff): status
 ' Start using custom I/O settings
-'   RES_PIN optional, but recommended (pin # only validated in Reset())
+'   NOTE: RES_PIN is optional, but recommended (pin # only validated in Reset())
     if lookdown(CS_PIN: 0..31) and lookdown(SCK_PIN: 0..31) and {
 }   lookdown(SDA_PIN: 0..31) and lookdown(DC_PIN: 0..31)
         if (status := spi.init(SCK_PIN, SDA_PIN, -1, core#SPI_MODE))
@@ -98,7 +98,9 @@ PUB Startx(CS_PIN, SCK_PIN, SDA_PIN, DC_PIN, RESET_PIN, WIDTH, HEIGHT, ptr_drawb
             _disp_ymax := _disp_height-1
             _buff_sz := (_disp_width * _disp_height) * BYTESPERPX
             _bytesperln := _disp_width * BYTESPERPX
+#ifndef GFX_DIRECT
             address(ptr_drawbuff)
+#endif
             return
     ' if this point is reached, something above failed
     ' Double check I/O pin assignments, connections, power
@@ -335,36 +337,33 @@ PUB COMVoltageLevel(level)
             return
 
 PUB DisplayBounds(sx, sy, ex, ey) | tmp, tmpx, tmpy, cmd_pkt[3]
-' Set display start and end offsets
-    ifnot lookdown(sx: 0..127) or lookdown(sy: 0..127) or lookdown(ex: 0..127) {
-}   or lookdown(ey: 0..127)
-        return
+' Set display start (sx, sy) and end (ex, ey) drawing boundaries
+    if (sx => 0 and ex =< _disp_xmax) and (sy => 0 and ey =< _disp_ymax)
+        ' the ST7735 requires (ex, ey) be greater than (sx, sy)
+        ' if they're not, swap them
+        sx += _offs_x
+        sy += _offs_y
+        ex += _offs_x
+        ey += _offs_y
+        if ex < sx                              ' ex is less than sx?
+            tmp := sx                           '   swap them
+            sx := ex
+            ex := tmp
+        if ey < sy                              ' ey is less than sy?
+            tmp := sy                           '   swap them
+            sy := ey
+            ey := tmp
+        tmpx.byte[0] := sx.byte[1]
+        tmpx.byte[1] := sx.byte[0]
+        tmpx.byte[2] := ex.byte[1]
+        tmpx.byte[3] := ex.byte[0]
+        tmpy.byte[0] := sy.byte[1]
+        tmpy.byte[1] := sy.byte[0]
+        tmpy.byte[2] := ey.byte[1]
+        tmpy.byte[3] := ey.byte[0]
 
-    ' the ST7735 requires (ex, ey) be greater than (sx, sy)
-    ' if they're not, swap them
-    sx += _offs_x
-    sy += _offs_y
-    ex += _offs_x
-    ey += _offs_y
-    if ex < sx
-        tmp := sx
-        sx := ex
-        ex := tmp
-    if ey < sy
-        tmp := sy
-        sy := ey
-        ey := tmp
-    tmpx.byte[0] := sx.byte[1]
-    tmpx.byte[1] := sx.byte[0]
-    tmpx.byte[2] := ex.byte[1]
-    tmpx.byte[3] := ex.byte[0]
-    tmpy.byte[0] := sy.byte[1]
-    tmpy.byte[1] := sy.byte[0]
-    tmpy.byte[2] := ey.byte[1]
-    tmpy.byte[3] := ey.byte[0]
-
-    writereg(core#CASET, 4, @tmpx)
-    writereg(core#RASET, 4, @tmpy)
+        writereg(core#CASET, 4, @tmpx)
+        writereg(core#RASET, 4, @tmpy)
 
 PUB DisplayInverted(state)
 ' Invert display colors
