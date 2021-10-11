@@ -381,6 +381,20 @@ PUB DisplayOffset(x, y)
     _offs_x := 0 #> x <# 127
     _offs_y := 0 #> y <# 159
 
+PUB DisplayRotate(state): curr_state
+' Rotate display
+'   Valid values: TRUE (-1 or 1), FALSE (0)
+'   Any other value returns the current setting
+    curr_state := _madctl
+    case abs(state)
+        0, 1:
+            state := abs(state) << core.MV
+        other:
+            return (((curr_state >> core.MV) & 1) == 1)
+
+    _madctl := ((curr_state & core.MV_MASK) | state)
+    writereg(core.MADCTL, 1, @_madctl)
+
 PUB DisplayVisibility(mode) | inv_state
 ' Set display visiblity
 '   NOTE: Doesn't affect display RAM contents.
@@ -766,15 +780,15 @@ PUB PowerControl2(v25, vgh, vgl) | tmp
 
 PUB Reset()
 ' Reset the display controller
-    if lookdown(_RESET: 0..63)
+    if lookdown(_RESET: 0..63)                  ' I/O pin defined - hard reset
         pinh(_RESET)
         waitus(10)
         pinl(_RESET)
         waitus(10)
         pinh(_RESET)
         waitms(5)
-    else
-        writereg(core.SOFT_RESET, 0, 0)
+    else                                        ' no I/O pin defined - do
+        writereg(core.SOFT_RESET, 0, 0)         '   soft reset instead
 
 PUB SubpixelOrder(order=-2): curr_ord
 ' Set subpixel color order

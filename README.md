@@ -10,7 +10,7 @@ This is a P8X32A/Propeller, P2X8C4M64P/Propeller 2 driver object for Sitronix ST
 * SPI connection at 20MHz (P1), 20MHz (P2) (Max spec is 15MHz but this isn't enforced. YMMV). 4-wire SPI: CS, SCL, SDA, DC, w/RESET
 * Integration with the generic bitmap graphics library
 * Buffered and unbuffered display support (compile-time choice)
-* Display mirroring
+* Display mirroring, rotation
 * Control display visibility (independent of display RAM contents)
 * Set subpixel order
 * Set color depth (12, 16, 18-bit can be set; currently only 16-bit supported by driver)
