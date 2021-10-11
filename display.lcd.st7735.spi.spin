@@ -301,6 +301,10 @@ PUB Char(ch) | gl_c, gl_r, lastgl_c, lastgl_r
             return
 #endif
 
+PUB CharAttrs(attrs)
+' Set character attributes
+    _char_attrs := attrs
+
 #ifdef GFX_DIRECT
 PUB Clear{}
 ' Clear the display directly, bypassing the display buffer
@@ -636,18 +640,6 @@ PUB Powered(state)
     writereg(state, 0, 0)
     time.msleep(120)
 
-PUB Reset{}
-' Reset the display controller
-    outa[_RESET] := 1
-    dira[_RESET] := 1
-    if lookdown(_RESET: 0..31)
-        outa[_RESET] := 1
-        time.usleep(10)
-        outa[_RESET] := 0
-        time.usleep(10)
-        outa[_RESET] := 1
-        time.msleep(5)
-
 PUB PowerControl(mode, ap, sap, bclkdiv1, bclkdiv2, bclkdiv3, bclkdiv4, bclkdiv5) | tmp
 ' Set partial mode/full-colors power control
 '   Valid values:
@@ -779,6 +771,18 @@ PUB PowerControl2(v25, vgh, vgl) | tmp
     tmp := v25 | vgh | vgl
 
     writereg(core#PWCTR2, 1, @tmp)
+
+PUB Reset{}
+' Reset the display controller
+    outa[_RESET] := 1
+    dira[_RESET] := 1
+    if lookdown(_RESET: 0..31)
+        outa[_RESET] := 1
+        time.usleep(10)
+        outa[_RESET] := 0
+        time.usleep(10)
+        outa[_RESET] := 1
+        time.msleep(5)
 
 PUB SubpixelOrder(order): curr_ord
 ' Set subpixel color order
