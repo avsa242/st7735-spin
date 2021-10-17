@@ -2,14 +2,15 @@
     --------------------------------------------
     Filename: display.lcd.st7735.spi.spin
     Author: Jesse Burt
-    Description: Driver for Sitronix ST7735-based displays (4W SPI)
+    Description: Driver for Sitronix ST7735-based displays
     Copyright (c) 2021
     Started Mar 7, 2020
-    Updated Oct 11, 2021
+    Updated Oct 17, 2021
     See end of file for terms of use.
     --------------------------------------------
 }
 #define ST7735
+#define MEMMV_NATIVE wordmove
 #include "lib.gfx.bitmap.spin"
 
 CON
@@ -195,12 +196,33 @@ PUB Address(addr): curr_addr
             return _ptr_drawbuffer
 
 #ifdef GFX_DIRECT
-PUB Bitmap(a, b, c)
+PUB Bitmap(ptr_bmap, xs, ys, bm_wid, bm_lns) | offs, nr_pix
+' Display bitmap
+'   ptr_bmap: pointer to bitmap data
+'   (xs, ys): upper-left corner of bitmap
+'   bm_wid: width of bitmap, in pixels
+'   bm_lns: number of lines in bitmap
+    displaybounds(xs, ys, xs+(bm_wid-1), ys+(bm_lns-1))
+    outa[_CS] := 0
+    outa[_DC] := core#CMD
+    spi.wr_byte(core#RAMWR)
+
+    ' calc total number of pixels to write, based on dims and color depth
+    ' clamp to a minimum of 1 to avoid odd behavior
+    nr_pix := 1 #> ((xs + bm_wid-1) * (ys + bm_lns-1) * BYTESPERPX)
+
+    outa[_DC] := core#DATA
+    spi.wrblock_lsbf(ptr_bmap, nr_pix)
+    outa[_CS] := 1
 #endif
 
 #ifdef GFX_DIRECT
-PUB Box(x1, y1, x2, y2, color, fill) | cmd_pkt[3], sy
-
+PUB Box(x1, y1, x2, y2, color, fill) | cmd_pkt[3]
+' Draw a box
+'   (x1, y1): upper-left corner of box
+'   (x2, y2): lower-right corner of box
+'   color: border and (optional) fill color
+'   fill: filled flag (0: no fill, nonzero: fill)
     if (x2 < x1) or (y2 < y1)
         return
     if fill
