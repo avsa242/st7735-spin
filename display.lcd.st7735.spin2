@@ -1,6 +1,6 @@
 {
     --------------------------------------------
-    Filename: display.lcd.st7735.spi.spin2
+    Filename: display.lcd.st7735.spin2
     Author: Jesse Burt
     Description: Driver for Sitronix ST7735-based displays (P2 version)
     Copyright (c) 2022

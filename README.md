@@ -28,8 +28,11 @@ P2/SPIN2:
 
 ## Compiler Compatibility
 
-* P1/SPIN1: OpenSpin (tested with 1.00.81), FlexSpin (tested with 5.9.4-beta)
-* P2/SPIN2: FlexSpin (tested with 5.9.4-beta)
+* P1/SPIN1 OpenSpin (bytecode): Untested (deprecated)
+* P1/SPIN1 FlexSpin (bytecode): OK, tested with 5.9.7-beta
+* P1/SPIN1 FlexSpin (native): OK, tested with 5.9.7-beta
+* ~~P2/SPIN2 FlexSpin (nu-code): FTBFS, tested with 5.9.7-beta~~
+* P2/SPIN2 FlexSpin (native): OK, tested with 5.9.7-beta
 * ~~BST~~ (incompatible - no preprocessor)
 * ~~Propeller Tool~~ (incompatible - no preprocessor)
 * ~~PNut~~ (incompatible - no preprocessor)
@@ -42,10 +45,3 @@ P2/SPIN2:
 
 * Reading from display not currently supported
 
-## TODO
-
-- [x] Port to P2/SPIN2
-- [x] Use the 20MHz SPI driver for the P1
-- [x] Add some direct-draw methods to the driver for apps that don't need a full buffered display
-- [ ] Add optional backlight pin to enable backlight control (PWM)
-- [ ] Test external memory options with driver
