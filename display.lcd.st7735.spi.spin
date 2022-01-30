@@ -5,7 +5,7 @@
     Description: Driver for Sitronix ST7735-based displays
     Copyright (c) 2022
     Started Mar 7, 2020
-    Updated Jan 25, 2022
+    Updated Jan 30, 2022
     See end of file for terms of use.
     --------------------------------------------
 }
@@ -59,12 +59,8 @@ CON
 
 VAR
 
-    long _ptr_drawbuffer
-    word _buff_sz
     word _framerate
-    word _bytesperln
     byte _CS, _RESET, _DC
-    byte _disp_width, _disp_height, _disp_xmax, _disp_ymax, _offs_x, _offs_y
 
 '   Shadow registers
     byte _colmod, _madctl, _opmode
