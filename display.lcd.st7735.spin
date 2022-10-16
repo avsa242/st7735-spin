@@ -5,7 +5,7 @@
     Description: Driver for Sitronix ST7735-based displays
     Copyright (c) 2022
     Started Mar 7, 2020
-    Updated Oct 8, 2022
+    Updated Oct 16, 2022
     See end of file for terms of use.
     --------------------------------------------
 }
@@ -65,7 +65,7 @@ VAR
 
 OBJ
 
-    spi : "com.spi.fast-nocs"                   ' SPI engine (no CS support)
+    spi : "com.spi.20mhz"                   ' SPI engine (no CS support)
     core: "core.con.st7735"                     ' HW-specific constants
     time: "time"                                ' basic timekeeping methods
 
@@ -279,7 +279,9 @@ PUB box(x1, y1, x2, y2, color, fill) | cmd_pkt[3]
 #endif
 
 #ifdef GFX_DIRECT
-PUB char(ch) | gl_c, gl_r, lastgl_c, lastgl_r
+PUB tx = putchar
+PUB char = putchar
+PUB putchar(ch) | gl_c, gl_r, lastgl_c, lastgl_r
 ' Draw character from currently loaded font
     lastgl_c := _font_width-1
     lastgl_r := _font_height-1
