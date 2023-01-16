@@ -2,10 +2,10 @@
     --------------------------------------------
     Filename: display.lcd.st7735.spin
     Author: Jesse Burt
-    Description: Driver for Sitronix ST7735-based displays
-    Copyright (c) 2022
+    Description: Driver for Sitronix ST77xx-based displays
+    Copyright (c) 2023
     Started Mar 7, 2020
-    Updated Dec 30, 2022
+    Updated Jan 16, 2023
     See end of file for terms of use.
     --------------------------------------------
 }
@@ -65,7 +65,7 @@ VAR
 
 OBJ
 
-    spi : "com.spi.20mhz"                   ' SPI engine (no CS support)
+    spi : "com.spi.20mhz"                       ' SPI engine
     core: "core.con.st7735"                     ' HW-specific constants
     time: "time"                                ' basic timekeeping methods
 
@@ -136,6 +136,41 @@ PUB defaults{}
     disp_part_area(0, 161)                      ' Can be 0, 159 also, depending on GM pins config
     opmode(NORMAL)
     visibility(NORMAL)
+
+PUB preset_bluetab240x240{} | tmp[3]
+' Adafruit 1.3" 240x240 LCD, blue-tabbed overlay
+    reset
+    time.msleep(150)
+    writereg(core.SLPOUT, 0, 0)
+    time.msleep(10)
+
+    tmp := $55
+    writereg(core.COLMOD, 1, @tmp)
+    time.msleep(10)
+
+    tmp := $08
+    writereg(core.MADCTL, 1, @tmp)
+
+    tmp.byte[0] := 0
+    tmp.byte[1] := 0
+    tmp.byte[2] := 0
+    tmp.byte[3] := 240
+    writereg(core.CASET, 4, @tmp)
+
+    tmp.byte[0] := 0
+    tmp.byte[1] := 0
+    tmp.byte[2] := 320>>8
+    tmp.byte[3] := 320&$ff
+    writereg(core.RASET, 4, @tmp)
+
+    writereg(core.INVON, 0, 0)
+    time.msleep(10)
+
+    writereg(core.NORON, 0, 0)
+    time.msleep(10)
+
+    writereg(core.DISPON, 0, 0)
+    time.msleep(10)
 
 PUB preset_greentab128x128{}
 ' Like defaults, but with settings applicable to green-tabbed 128x128 displays
@@ -334,7 +369,11 @@ PUB color_depth(format)
 '   Valid values: 12, 16, 18
     case format
         12, 16, 18:
+#ifdef ST7789
+            format := lookdown(format: 0, 0, 12, 0, 16, 18) | core#RGB_65K
+#else
             format := lookdown(format: 0, 0, 12, 0, 16, 18)
+#endif
             writereg(core#COLMOD, 1, @format)
 
 PUB com_voltage(level)
@@ -548,32 +587,88 @@ PUB disp_part_area(sy, ey) | tmp
 
     writereg(core#PTLAR, 4, @tmp)
 
+#ifdef ST7789
+PUB plot(x, y, color) | tmp, xs, ys, xe, ye, cmd_pkt[4]
+' Plot pixel at (x, y) in color
+    if ((x < 0) or (x > _disp_xmax) or (y < 0) or (y > _disp_ymax))
+        return                                  ' coords out of bounds, ignore
+
+#ifdef GFX_DIRECT
+' direct to display
+    { build command packet }
+    cmd_pkt.byte[0] := core#CASET               ' D/C L
+    cmd_pkt.byte[1] := (x + _offs_x) >> 8       ' D/C H
+    cmd_pkt.byte[2] := (x + _offs_x) & $ff
+    cmd_pkt.byte[3] := (x + _offs_x) >> 8       ' D/C H
+    cmd_pkt.byte[4] := (x + _offs_x) & $ff
+
+    cmd_pkt.byte[5] := core#RASET               ' D/C L
+    cmd_pkt.byte[6] := (y + _offs_y) >> 8       ' D/C H
+    cmd_pkt.byte[7] := (y + _offs_y) & $ff
+    cmd_pkt.byte[8] := (y + _offs_y) >> 8       ' D/C H
+    cmd_pkt.byte[9] := (y + _offs_y) & $ff
+
+    cmd_pkt.byte[10] := core#RAMWR              ' D/C L
+    cmd_pkt.byte[11] := color.byte[1]           ' D/C H
+    cmd_pkt.byte[12] := color.byte[0]
+
+    { write X coordinate }
+    outa[_DC] := core#CMD
+    outa[_CS] := 0
+    spi.wr_byte(cmd_pkt.byte[0])
+    outa[_DC] := core#DATA
+    spi.wrblock_lsbf(@cmd_pkt.byte[1], 4)
+
+    { write Y coordinate }
+    outa[_DC] := core#CMD
+    spi.wr_byte(cmd_pkt.byte[5])
+    outa[_DC] := core#DATA
+    spi.wrblock_lsbf(@cmd_pkt.byte[6], 4)
+
+    { write pixel color }
+    outa[_DC] := core#CMD
+    spi.wr_byte(cmd_pkt.byte[10])
+    outa[_DC] := core#DATA
+    spi.wrblock_lsbf(@cmd_pkt.byte[11], 2)
+    outa[_CS] := 1
+#else
+' buffered display
+    word[_ptr_drawbuffer][x + (y * _disp_width)] := color
+#endif
+#else
 PUB plot(x, y, color) | tmp, xs, ys, xe, ye, cmd_pkt[3]
 ' Plot pixel at (x, y) in color
     if ((x < 0) or (x > _disp_xmax) or (y < 0) or (y > _disp_ymax))
         return                                  ' coords out of bounds, ignore
 #ifdef GFX_DIRECT
 ' direct to display
+    { build command packet }
     cmd_pkt.byte[0] := core#CASET               ' D/C L
     cmd_pkt.byte[1] := (x + _offs_x)            ' D/C H
     cmd_pkt.byte[2] := (x + _offs_x)
+
     cmd_pkt.byte[3] := core#RASET               ' D/C L
     cmd_pkt.byte[4] := (y + _offs_y)            ' D/C H
     cmd_pkt.byte[5] := (y + _offs_y)
+
     cmd_pkt.byte[6] := core#RAMWR               ' D/C L
     cmd_pkt.byte[7] := color.byte[1]            ' D/C H
     cmd_pkt.byte[8] := color.byte[0]
+
+    { write X coordinate }
     outa[_DC] := core#CMD
     outa[_CS] := 0
     spi.wr_byte(cmd_pkt.byte[0])
     outa[_DC] := core#DATA
     spi.wrblock_lsbf(@cmd_pkt.byte[1], 2)
 
+    { write Y coordinate }
     outa[_DC] := core#CMD
     spi.wr_byte(cmd_pkt.byte[3])
     outa[_DC] := core#DATA
     spi.wrblock_lsbf(@cmd_pkt.byte[4], 2)
 
+    { write pixel color }
     outa[_DC] := core#CMD
     spi.wr_byte(cmd_pkt.byte[6])
     outa[_DC] := core#DATA
@@ -582,6 +677,7 @@ PUB plot(x, y, color) | tmp, xs, ys, xe, ye, cmd_pkt[3]
 #else
 ' buffered display
     word[_ptr_drawbuffer][x + (y * _disp_width)] := color
+#endif
 #endif
 
 #ifndef GFX_DIRECT
