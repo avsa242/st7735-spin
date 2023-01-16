@@ -103,7 +103,7 @@ PUB stop{}
     spi.deinit{}
 
 PUB defaults{}
-' Apply power-on-reset default settings
+' Apply power-on-reset default settings (ST7735R)
     reset{}
     powered(TRUE)
 
@@ -138,8 +138,8 @@ PUB defaults{}
     visibility(NORMAL)
 
 PUB preset_bluetab240x240{} | tmp[3]
-' Adafruit 1.3" 240x240 LCD, blue-tabbed overlay
-    reset
+' ST7789VW: Adafruit 1.3" 240x240 LCD, blue-tabbed overlay
+    reset{}
     time.msleep(150)
     writereg(core.SLPOUT, 0, 0)
     time.msleep(10)
@@ -173,7 +173,7 @@ PUB preset_bluetab240x240{} | tmp[3]
     time.msleep(10)
 
 PUB preset_greentab128x128{}
-' Like defaults, but with settings applicable to green-tabbed 128x128 displays
+' Like defaults, but with settings applicable to green-tabbed 128x128 displays (ST7735R)
     reset{}
     powered(TRUE)
 
@@ -207,8 +207,48 @@ PUB preset_greentab128x128{}
     opmode(NORMAL)
     visibility(NORMAL)
 
+PUB preset_adafruit_1p3_240x240_land_up{}
+' ST7789VW: Adafruit 1.3" 240x240 (#4313, blue tab), landscape (up)
+    set_dims(240, 240)
+    preset_bluetab240x240{}
+    rotation(0)
+    mirror_h(false)
+    mirror_v(false)
+    disp_offset(0, 0)
+    draw_area(0, 0, _disp_xmax, _disp_ymax)
+
+PUB preset_adafruit_1p3_240x240_land_down{}
+' ST7789VW: Adafruit 1.3" 240x240 (#4313, blue tab), landscape (down)
+    set_dims(240, 240)
+    preset_bluetab240x240{}
+    rotation(0)
+    mirror_h(true)
+    mirror_v(true)
+    disp_offset(0, 80)                     ' 80: 320-240
+    draw_area(0, 0, _disp_xmax, _disp_ymax)
+
+PUB preset_adafruit_1p3_240x240_port_up{}
+' ST7789VW: Adafruit 1.3" 240x240 (#4313, blue tab), portrait (up)
+    set_dims(240, 240)
+    preset_bluetab240x240{}
+    rotation(1)
+    mirror_h(false)
+    mirror_v(true)
+    disp_offset(80, 0)                     ' 80: 320-240
+    draw_area(0, 0, _disp_xmax, _disp_ymax)
+
+PUB preset_adafruit_1p3_240x240_port_down{}
+' ST7789VW: Adafruit 1.3" 240x240 (#4313, blue tab), portrait (down)
+    set_dims(240, 240)
+    preset_bluetab240x240{}
+    rotation(1)
+    mirror_h(true)
+    mirror_v(false)
+    disp_offset(0, 0)                     ' 80: 320-240
+    draw_area(0, 0, _disp_xmax, _disp_ymax)
+
 PUB preset_adafruit_1p44_128x128_land_up{}
-' Adafruit 1.44" 128x128 (#2088, green tab), landscape (up)
+' ST7735R: Adafruit 1.44" 128x128 (#2088, green tab), landscape (up)
     set_dims(128, 128)
     preset_greentab128x128{}
     rotation(0)
@@ -218,7 +258,7 @@ PUB preset_adafruit_1p44_128x128_land_up{}
     draw_area(0, 0, _disp_xmax, _disp_ymax)
 
 PUB preset_adafruit_1p44_128x128_land_down{}
-' Adafruit 1.44" 128x128 (#2088, green tab), landscape (down)
+' ST7735R: Adafruit 1.44" 128x128 (#2088, green tab), landscape (down)
     set_dims(128, 128)
     preset_greentab128x128{}
     rotation(0)
@@ -228,7 +268,7 @@ PUB preset_adafruit_1p44_128x128_land_down{}
     draw_area(0, 0, _disp_xmax, _disp_ymax)
 
 PUB preset_adafruit_1p44_128x128_port_up{}
-' Adafruit 1.44" 128x128 (#2088, green tab), portrait (up)
+' ST7735R: Adafruit 1.44" 128x128 (#2088, green tab), portrait (up)
     set_dims(128, 128)
     preset_greentab128x128{}
     rotation(1)
@@ -238,7 +278,7 @@ PUB preset_adafruit_1p44_128x128_port_up{}
     draw_area(0, 0, _disp_xmax, _disp_ymax)
 
 PUB preset_adafruit_1p44_128x128_port_down{}
-' Adafruit 1.44" 128x128 (#2088, green tab), portrait (up)
+' ST7735R: Adafruit 1.44" 128x128 (#2088, green tab), portrait (up)
     set_dims(128, 128)
     preset_greentab128x128{}
     rotation(1)
