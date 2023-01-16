@@ -283,8 +283,14 @@ PUB box(x1, y1, x2, y2, color, fill) | cmd_pkt[3]
     if (x2 < x1) or (y2 < y1)
         return
     if (fill)
-        ' filled box: set the display's draw boundaries to the size of
-        ' the box, and send enough data to draw H * W pixels
+        { add currently set display offsets }
+        x1 += _offs_x
+        x2 += _offs_x
+        y1 += _offs_y
+        y2 += _offs_y
+
+        { filled box: set the display's draw boundaries to the size of
+            the box, and send enough data to draw H * W pixels }
         cmd_pkt.byte[0] := core.CASET           ' D/C L
         cmd_pkt.byte[1] := x1.byte[1]           ' D/C H
         cmd_pkt.byte[2] := x1.byte[0]
@@ -383,8 +389,8 @@ PUB com_voltage(level)
 PUB draw_area(sx, sy, ex, ey) | tmp, tmpx, tmpy, cmd_pkt[3]
 ' Set display start (sx, sy) and end (ex, ey) drawing boundaries
     if ((sx >= 0) and (ex <= _disp_xmax) and (sy >= 0) and (ey <= _disp_ymax))
-        ' the ST7735 requires (ex, ey) be greater than (sx, sy)
-        ' if they're not, swap them
+        { The ST77xx requires (ex, ey) be greater than (sx, sy).
+            If they're not, swap them. }
         sx += _offs_x
         sy += _offs_y
         ex += _offs_x
