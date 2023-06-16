@@ -5,7 +5,7 @@
     Description: Driver for Sitronix ST77xx-based displays
     Copyright (c) 2023
     Started Mar 7, 2020
-    Updated Jan 16, 2023
+    Updated Jun 16, 2023
     See end of file for terms of use.
     --------------------------------------------
 }
@@ -371,7 +371,7 @@ PUB box(x1, y1, x2, y2, color, fill) | cmd_pkt[3]
         outa[_DC] := core#DATA
         spi.wrwordx_msbf(color, (x2-x1)+1)
 
-        draw_area(x1, y2, y2, y2)               ' bottom
+        draw_area(x1, y2, x2, y2)               ' bottom
         outa[_CS] := 0
         outa[_DC] := core#CMD
         spi.wr_byte(core#RAMWR)
