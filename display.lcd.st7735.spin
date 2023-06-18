@@ -429,7 +429,7 @@ PUB com_voltage(level)
     level := (-(-2_000 #> level <# -0_425) / 25) - 17
     writereg(core#VMCTR1, 1, @level)
 
-PUB draw_area(sx, sy, ex, ey) | tmp, tmpx, tmpy, cmd_pkt[3]
+PUB draw_area(sx, sy, ex, ey) | tmp, tmpx, tmpy
 ' Set display start (sx, sy) and end (ex, ey) drawing boundaries
     if ((sx => 0) and (ex =< _disp_xmax) and (sy => 0) and (ey =< _disp_ymax))
         { The ST77xx requires (ex, ey) be greater than (sx, sy).
