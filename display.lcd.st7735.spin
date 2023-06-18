@@ -5,7 +5,7 @@
     Description: Driver for Sitronix ST77xx-based displays
     Copyright (c) 2023
     Started Mar 7, 2020
-    Updated Jun 16, 2023
+    Updated Jun 18, 2023
     See end of file for terms of use.
     --------------------------------------------
 }
@@ -141,7 +141,7 @@ PUB preset_bluetab240x240{} | tmp[3]
 ' ST7789VW: Adafruit 1.3" 240x240 LCD, blue-tabbed overlay
     reset{}
     time.msleep(150)
-    writereg(core.SLPOUT, 0, 0)
+    command(core.SLPOUT)
     time.msleep(10)
 
     tmp := $55
@@ -163,13 +163,13 @@ PUB preset_bluetab240x240{} | tmp[3]
     tmp.byte[3] := 320&$ff
     writereg(core.RASET, 4, @tmp)
 
-    writereg(core.INVON, 0, 0)
+    command(core.INVON)
     time.msleep(10)
 
-    writereg(core.NORON, 0, 0)
+    command(core.NORON)
     time.msleep(10)
 
-    writereg(core.DISPON, 0, 0)
+    command(core.DISPON)
     time.msleep(10)
 
 PUB preset_greentab128x128{}
@@ -495,8 +495,8 @@ PUB visibility(mode) | inv_state
         other:
             return
 
-    writereg(mode, 0, 0)
-    writereg(inv_state, 0, 0)
+    command(mode)
+    command(inv_state)
     time.msleep(120)
 
 PUB frame_rate_ctrl(ln_per, f_porch, b_porch, lim_ln_per, lim_f_porch, lim_b_porch) | tmp[2], nr_bytes
@@ -613,12 +613,12 @@ PUB opmode(mode)
 '   Any other value is ignored
     case mode
         NORMAL:
-            writereg(core#IDMOFF, 0, 0)
-            writereg(core#NORON, 0, 0)
+            command(core#IDMOFF)
+            command(core#NORON)
         PARTIAL:
-            writereg(core#PTLON, 0, 0)
+            command(core#PTLON)
         IDLE:
-            writereg(core#IDMON, 0, 0)
+            command(core#IDMON)
         other:
             return
 
@@ -740,7 +740,7 @@ PUB powered(state)
 '   Valid values:
 '       TRUE (non-zero), FALSE (0)
 '   NOTE: This incurs a 120ms delay after calling
-    writereg((((state <> 0) & 1) + core#SLPIN), 0, 0)
+    command( (((state <> 0) & 1) + core#SLPIN) )
     time.msleep(120)
 
 #ifdef GFX_DIRECT
@@ -872,7 +872,7 @@ PUB reset{}
         outa[_RESET] := 1
         time.msleep(5)
     else                                        ' no I/O pin defined - do
-        writereg(core#SOFT_RESET, 0, 0)         '   soft reset instead
+        command(core#SOFT_RESET)                    '   soft reset instead
 
 PUB show{}
 ' Write the draw buffer to the display
@@ -902,17 +902,19 @@ PRI memfill(xs, ys, val, count)
     wordfill(_ptr_drawbuffer + ((xs << 1) + (ys * _bytesperln)), val, count)
 #endif
 
-PRI writereg(reg_nr, nr_bytes, ptr_buff)
-' Write nr_bytes to device from ptr_buff
-    case reg_nr
-        ' single-byte commands
+PRI command(c)
+' Single-byte command without parameters
+    case c
         $00, $01, $11, $12, $13, $20, $21, $28, $29, $38, $39:
             outa[_DC] := core#CMD               ' D/C low = command
             outa[_CS] := 0
-            spi.wr_byte(reg_nr)
+            spi.wr_byte(c)
             outa[_CS] := 1
             return
-        ' multi-byte commands
+
+PRI writereg(reg_nr, nr_bytes, ptr_buff)
+' Write nr_bytes to device from ptr_buff
+    case reg_nr
         $2A..$2C, $30, $36, $3A, $B1..$B4, $B6, $C0..$C5, $E0, $E1, $FC:
             outa[_DC] := core#CMD
             outa[_CS] := 0
