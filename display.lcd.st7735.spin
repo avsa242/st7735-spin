@@ -905,7 +905,7 @@ PRI memfill(xs, ys, val, count)
 PRI command(c)
 ' Single-byte command without parameters
     case c
-        $00, $01, $11, $12, $13, $20, $21, $28, $29, $38, $39:
+        $00, $01, $11..$13, $20, $21, $28, $29, $38, $39:
             outa[_DC] := core#CMD               ' D/C low = command
             outa[_CS] := 0
             spi.wr_byte(c)
