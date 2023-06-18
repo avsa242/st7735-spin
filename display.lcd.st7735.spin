@@ -317,7 +317,7 @@ PUB bitmap(ptr_bmap, xs, ys, bm_wid, bm_lns) | offs, nr_pix
 #endif
 
 #ifdef GFX_DIRECT
-PUB box(x1, y1, x2, y2, color, fill) | cmd_pkt[3]
+PUB box(x1, y1, x2, y2, color, fill) | byte cmd_pkt[10]
 ' Draw a box
 '   (x1, y1): upper-left corner of box
 '   (x2, y2): lower-right corner of box
@@ -334,27 +334,27 @@ PUB box(x1, y1, x2, y2, color, fill) | cmd_pkt[3]
 
         { filled box: set the display's draw boundaries to the size of
             the box, and send enough data to draw H * W pixels }
-        cmd_pkt.byte[0] := core#CASET           ' D/C L
-        cmd_pkt.byte[1] := x1.byte[1]           ' D/C H
-        cmd_pkt.byte[2] := x1.byte[0]
-        cmd_pkt.byte[3] := x2.byte[1]
-        cmd_pkt.byte[4] := x2.byte[0]
-        cmd_pkt.byte[5] := core#RASET           ' D/C L
-        cmd_pkt.byte[6] := y1.byte[1]           ' D/C H
-        cmd_pkt.byte[7] := y1.byte[0]
-        cmd_pkt.byte[8] := y2.byte[1]
-        cmd_pkt.byte[9] := y2.byte[0]
+        cmd_pkt[0] := core#CASET                ' D/C L
+        cmd_pkt[1] := x1.byte[1]                ' D/C H
+        cmd_pkt[2] := x1.byte[0]
+        cmd_pkt[3] := x2.byte[1]
+        cmd_pkt[4] := x2.byte[0]
+        cmd_pkt[5] := core#RASET                ' D/C L
+        cmd_pkt[6] := y1.byte[1]                ' D/C H
+        cmd_pkt[7] := y1.byte[0]
+        cmd_pkt[8] := y2.byte[1]
+        cmd_pkt[9] := y2.byte[0]
 
         outa[_DC] := core#CMD
         outa[_CS] := 0
-        spi.wr_byte(cmd_pkt.byte[0])            ' column cmd
+        spi.wr_byte(cmd_pkt[0])                 ' column cmd
         outa[_DC] := core#DATA
-        spi.wrblock_lsbf(@cmd_pkt.byte[1], 4)   ' x1, x2
+        spi.wrblock_lsbf(@cmd_pkt[1], 4)        ' x1, x2
 
         outa[_DC] := core#CMD
-        spi.wr_byte(cmd_pkt.byte[5])            ' row cmd
+        spi.wr_byte(cmd_pkt[5])                 ' row cmd
         outa[_DC] := core#DATA
-        spi.wrblock_lsbf(@cmd_pkt.byte[6], 4)   ' y1, y2
+        spi.wrblock_lsbf(@cmd_pkt[6], 4)        ' y1, y2
 
         outa[_DC] := core#CMD
         spi.wr_byte(core#RAMWR)
