@@ -5,54 +5,70 @@
     Description: Driver for Sitronix ST77xx-based displays
     Copyright (c) 2023
     Started Mar 7, 2020
-    Updated Jun 18, 2023
+    Updated Jul 24, 2023
     See end of file for terms of use.
     --------------------------------------------
 }
+{ these displays use way more memory than the P1 has, so drawing directly to the display is the
+    only supported  method }
+#define GFX_DIRECT
+
 #define MEMMV_NATIVE wordmove
 #include "graphics.common.spinh"
 
 CON
 
-    MAX_COLOR           = 65535
-    BYTESPERPX          = 2
+    MAX_COLOR       = 65535
+    BYTESPERPX      = 2
 
 ' Display visibility modes
-    NORMAL              = 0
-    ALL_OFF             = 1
-    INVERTED            = 2
+    NORMAL          = 0
+    ALL_OFF         = 1
+    INVERTED        = 2
 
 ' Operating modes
-'   NORMAL              = 0
-    IDLE                = 1
-    PARTIAL             = 2
+'   NORMAL          = 0
+    IDLE            = 1
+    PARTIAL         = 2
 
 ' Subpixel order
-    RGB                 = 0
-    BGR                 = 1
+    RGB             = 0
+    BGR             = 1
 
 ' Power control 5
-    OFF                 = 0
-    SMALL               = 1
-    MEDLOW              = 2
-    MED                 = 3
-    MEDHI               = 4
-    LARGE               = 5
+    OFF             = 0
+    SMALL           = 1
+    MEDLOW          = 2
+    MED             = 3
+    MEDHI           = 4
+    LARGE           = 5
 
-    BCLK1_1             = 0
-    BCLK1_2             = 1
-    BCLK1_4             = 2
-    BCLK2_2             = 3
-    BCLK2_4             = 4
-    BCLK4_4             = 5
-    BCLK4_8             = 6
-    BCLK4_16            = 7
+    BCLK1_1         = 0
+    BCLK1_2         = 1
+    BCLK1_4         = 2
+    BCLK2_2         = 3
+    BCLK2_4         = 4
+    BCLK4_4         = 5
+    BCLK4_8         = 6
+    BCLK4_16        = 7
 
-    AUTO                = 0
+    AUTO            = 0
 
-    AVDD_X2_VGH25       = 0
-    AVDD_X3             = 1
-    AVDD_X3_VGH25       = 2
+    AVDD_X2_VGH25   = 0
+    AVDD_X3         = 1
+    AVDD_X3_VGH25   = 2
+
+    { default I/O settings; these can be overridden in the parent object }
+    { display dimensions }
+    WIDTH           = 128
+    HEIGHT          = 128
+
+    { SPI }
+    CS              = 0
+    SCK             = 1
+    MOSI            = 2
+    DC              = 3
+    RST             = 0
 
 VAR
 
@@ -72,12 +88,16 @@ OBJ
 PUB null{}
 ' This is not a top-level object
 
-PUB startx(CS_PIN, SCK_PIN, SDA_PIN, DC_PIN, RESET_PIN, WIDTH, HEIGHT, ptr_drawbuff): status
+PUB start{}: status
+' Start the driver using default I/O settings
+    return startx(CS, SCK, MOSI, DC, RST, WIDTH, HEIGHT, 0)
+
+PUB startx(CS_PIN, SCK_PIN, SDA_PIN, DC_PIN, RESET_PIN, DISP_W, DISP_H, ptr_drawbuff): status
 ' Start using custom I/O settings
 '   NOTE: RES_PIN is optional, but recommended (pin # only validated in reset())
-    if (lookdown(CS_PIN: 0..31) and lookdown(SCK_PIN: 0..31) and lookdown(SDA_PIN: 0..31) and {
-}   lookdown(DC_PIN: 0..31))
-        if (status := spi.init(SCK_PIN, SDA_PIN, -1, core#SPI_MODE))
+    if ( lookdown(CS_PIN: 0..31) and lookdown(SCK_PIN: 0..31) and lookdown(SDA_PIN: 0..31) and ...
+        lookdown(DC_PIN: 0..31) )
+        if ( status := spi.init(SCK_PIN, SDA_PIN, -1, core#SPI_MODE) )
             _RESET := RESET_PIN
             _DC := DC_PIN
             _CS := CS_PIN
@@ -86,10 +106,7 @@ PUB startx(CS_PIN, SCK_PIN, SDA_PIN, DC_PIN, RESET_PIN, WIDTH, HEIGHT, ptr_drawb
             outa[_DC] := 1
             dira[_DC] := 1
             reset{}
-            set_dims(WIDTH,HEIGHT)
-#ifndef GFX_DIRECT
-            address(ptr_drawbuff)
-#endif
+            set_dims(DISP_W, DISP_H)
             return
     ' if this point is reached, something above failed
     ' Double check I/O pin assignments, connections, power
@@ -101,6 +118,8 @@ PUB stop{}
     visibility(ALL_OFF)
     powered(FALSE)
     spi.deinit{}
+    dira[_CS] := 0
+    dira[_DC] := 0
 
 PUB defaults{}
 ' Apply power-on-reset default settings (ST7735R)
@@ -762,7 +781,7 @@ PUB putchar(ch) | gl_c, gl_r, lastgl_c, lastgl_r
             repeat gl_c from 0 to lastgl_c
                 repeat gl_r from 0 to lastgl_r
                     { if the current offset in the glyph is a set bit, draw it }
-                    if (byte[_font_addr][(ch << 3) + gl_c] & (|< gl_r))
+                    if (byte[_font_addr][(ch * _font_width) + gl_c] & (|< gl_r))
                         plot((_charpx_x + gl_c), (_charpx_y + gl_r), _fgcolor)
                     else
                     { otherwise, draw the background color, if enabled }

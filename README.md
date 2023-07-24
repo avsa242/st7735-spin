@@ -32,10 +32,10 @@ P2/SPIN2:
 
 | Processor | Language | Compiler               | Backend      | Status                |
 |-----------|----------|------------------------|--------------|-----------------------|
-| P1        | SPIN1    | FlexSpin (6.1.1)       | Bytecode     | OK                    |
-| P1        | SPIN1    | FlexSpin (6.1.1)       | Native/PASM  | OK                    |
-| P2        | SPIN2    | FlexSpin (6.1.1)       | NuCode       | Not yet implemented   |
-| P2        | SPIN2    | FlexSpin (6.1.1)       | Native/PASM2 | Not yet implemented   |
+| P1        | SPIN1    | FlexSpin (6.2.1)       | Bytecode     | OK                    |
+| P1        | SPIN1    | FlexSpin (6.2.1)       | Native/PASM  | OK                    |
+| P2        | SPIN2    | FlexSpin (6.2.1)       | NuCode       | FTBFS                 |
+| P2        | SPIN2    | FlexSpin (6.2.1)       | Native/PASM2 | OK                    |
 
 (other versions or toolchains not listed are not supported, and _may or may not_ work)
 
@@ -48,6 +48,6 @@ Tested with:
 ## Limitations
 
 * Reading from display not currently supported
-* Buffered display mode not generally useful on the P1, with most available panel sizes
+* Buffered display mode isn't supported on the P1 due to memory constraints
 * Color depths of 12, 16 or 18-bits can be set, but only 16bpp is currently actually supported
 
