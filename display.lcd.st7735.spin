@@ -856,7 +856,8 @@ PUB reset{}
     else                                        ' no I/O pin defined - do
         command(core#SOFT_RESET)                    '   soft reset instead
 
-pub scroll_up(x,y,ex,ey)
+pub scroll_up_fs(px)
+' dummy method
 
 PUB show{}
 ' Write the draw buffer to the display

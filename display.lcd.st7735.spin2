@@ -855,6 +855,11 @@ PUB reset()
     else                                        ' no I/O pin defined - do
         command(core.SOFT_RESET)                    '   soft reset instead
 
+#ifdef GFX_DIRECT
+PUB scroll_up_fs(px)
+' dummy method
+#endif
+
 PUB show()
 ' Write the draw buffer to the display
 #ifndef GFX_DIRECT
