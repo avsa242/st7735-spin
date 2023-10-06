@@ -10,8 +10,7 @@ This is a P8X32A/Propeller, P2X8C4M64P/Propeller 2 driver object for Sitronix ST
 * 4-wire SPI connection (CS, SCL, SDA, DC) at 20MHz (P1), 20MHz+ (P2).
 * Optional RESET hardware pin support
 * Integration with the generic bitmap graphics library
-* Build-time choice of buffered or unbuffered display (buffered generally only makes sense when
-building for the P2 due to memory usage)
+* Build-time choice of buffered or unbuffered display (P2 only; P1 is always bufferless)
 * Display mirroring, rotation
 * Control display visibility (independent of display RAM contents)
 * Set subpixel order (RGB, BGR)
@@ -32,10 +31,10 @@ P2/SPIN2:
 
 | Processor | Language | Compiler               | Backend      | Status                |
 |-----------|----------|------------------------|--------------|-----------------------|
-| P1        | SPIN1    | FlexSpin (6.2.1)       | Bytecode     | OK                    |
-| P1        | SPIN1    | FlexSpin (6.2.1)       | Native/PASM  | OK                    |
-| P2        | SPIN2    | FlexSpin (6.2.1)       | NuCode       | FTBFS                 |
-| P2        | SPIN2    | FlexSpin (6.2.1)       | Native/PASM2 | OK                    |
+| P1        | SPIN1    | FlexSpin (6.5.0)       | Bytecode     | OK                    |
+| P1        | SPIN1    | FlexSpin (6.5.0)       | Native/PASM  | OK                    |
+| P2        | SPIN2    | FlexSpin (6.5.0)       | NuCode       | FTBFS                 |
+| P2        | SPIN2    | FlexSpin (6.5.0)       | Native/PASM2 | OK                    |
 
 (other versions or toolchains not listed are not supported, and _may or may not_ work)
 
