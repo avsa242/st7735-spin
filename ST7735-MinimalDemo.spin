@@ -1,24 +1,26 @@
 {
-    --------------------------------------------
-    Filename: ST7735-MinimalDemo.spin
-    Description: Graphics demo using minimal code
-    Author: Jesse Burt
-    Copyright (c) 2024
-    Started: May 28, 2022
-    Updated: Jan 3, 2024
-    See end of file for terms of use.
-    --------------------------------------------
+----------------------------------------------------------------------------------------------------
+    Filename:       ST7735-MinimalDemo.spin
+    Description:    Driver for Sitronix ST77xx-based displays
+    Author:         Jesse Burt
+    Started:        May 28, 2022
+    Updated:        Sep 3, 2024
+    Copyright (c) 2024 - See end of file for terms of use.
+----------------------------------------------------------------------------------------------------
 }
+
 CON
 
     _clkmode    = xtal1 + pll16x
     _xinfreq    = 5_000_000
 
+
 OBJ
 
     fnt:    "font.5x8"
-    disp:   "display.lcd.st7735" | WIDTH=240, HEIGHT=240, CS=0, SCK=1, MOSI=2, DC=3, RST=4
+    disp:   "display.lcd.st7735" | WIDTH=128, HEIGHT=128, CS=0, SCK=1, MOSI=2, DC=3, RST=4
     ' NOTE: Ensure the WIDTH, HEIGHT settings here match the display preset chosen below
+
 
 PUB main()
 
@@ -30,7 +32,7 @@ PUB main()
 
     { configure the display with the minimum required setup }
     { Presets for ST7735R }
-'    disp.preset_adafruit_1p44_128x128_land_up()
+    disp.preset_adafruit_1p44_128x128_land_up()
 '    disp.preset_adafruit_1p44_128x128_land_down()
 '    disp.preset_adafruit_1p44_128x128_port_up()
 '    disp.preset_adafruit_1p44_128x128_port_down()
@@ -38,7 +40,7 @@ PUB main()
     { Presets for ST7789VW (make sure the #define and #pragma lines below are uncommented) }
 '#define ST7789
 '#pragma exportdef(ST7789)
-    disp.preset_adafruit_1p3_240x240_land_up()
+'    disp.preset_adafruit_1p3_240x240_land_up()
 '    disp.preset_adafruit_1p3_240x240_land_down()
 '    disp.preset_adafruit_1p3_240x240_port_up()
 '    disp.preset_adafruit_1p3_240x240_port_down()
@@ -60,6 +62,7 @@ PUB main()
     disp.box(0, 0, disp.XMAX, disp.YMAX, $ffff, false)
 
     repeat
+
 
 DAT
 {
