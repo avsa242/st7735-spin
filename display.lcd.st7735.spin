@@ -4,8 +4,8 @@
     Description:    Driver for Sitronix ST77xx-based displays
     Author:         Jesse Burt
     Started:        Mar 7, 2020
-    Updated:        Sep 3, 2024
-    Copyright (c) 2024 - See end of file for terms of use.
+    Updated:        Feb 8, 2025
+    Copyright (c) 2025 - See end of file for terms of use.
 ----------------------------------------------------------------------------------------------------
 }
 { these displays use way more memory than the P1 has, so drawing directly to the display is the
@@ -31,8 +31,11 @@ CON
     SPI_FREQ        = 1_000_000
 
 
-    MAX_COLOR       = 65535
-    BYTESPERPX      = 2
+    BPP             = 16                            ' bits per pixel/color depth of the display
+    BYTESPERPX      = 1 #> (BPP/8)                  ' limit to minimum of 1
+    BPPDIV          = BYTESPERPX #> (8 / BPP)       ' limit to range BYTESPERPX .. (8/BPP)
+    BUFF_SZ         = (WIDTH * HEIGHT) / BPPDIV
+    MAX_COLOR       = (1 << BPP)-1
     XMAX            = WIDTH-1
     YMAX            = HEIGHT-1
     CENTERX         = WIDTH/2
@@ -103,14 +106,22 @@ PUB start(): status
     return startx(CS, SCK, MOSI, DC, RST, WIDTH, HEIGHT, 0)
 
 
-PUB startx(CS_PIN, SCK_PIN, SDA_PIN, DC_PIN, RESET_PIN, DISP_W, DISP_H, ptr_drawbuff): status
-' Start using custom I/O settings
-'   NOTE: RES_PIN is optional, but recommended (pin # only validated in reset())
+PUB startx(CS_PIN, SCK_PIN, MOSI_PIN, DC_PIN, RES_PIN, DISP_W, DISP_H, p_disp): status
+' Start the driver using custom I/O settings and (optionally) external framebuffer
+'   CS_PIN:             Chip Select, 0..31
+'   SCK_PIN:            Serial Clock, 0..31
+'   MOSI_PIN:           Master-Out/Slave-In, 0..31
+'   DC_PIN:             Data/Command (sometimes known as RS or Register Select), 0..31
+'   RES_PIN:            Reset (set to -1 if not used), 0..31
+'   SCK_FREQ:           SPI bus speed (not currently used)
+'   DISP_WID, DISP_HT:  display dimensions, in pixels
+'   p_disp:             (optional) pointer to display buffer (leave blank or set to 0 to use
+'                           the driver's internal framebuffer)
 '   ptr_drawbuff is ignored (exists only for API compatibility with other drivers)
-    if ( lookdown(CS_PIN: 0..31) and lookdown(SCK_PIN: 0..31) and lookdown(SDA_PIN: 0..31) and ...
+    if ( lookdown(CS_PIN: 0..31) and lookdown(SCK_PIN: 0..31) and lookdown(MOSI_PIN: 0..31) and ...
         lookdown(DC_PIN: 0..31) )
-        if ( status := spi.init(SCK_PIN, SDA_PIN, -1, core.SPI_MODE) )
-            _RESET := RESET_PIN
+        if ( status := spi.init(SCK_PIN, MOSI_PIN, -1, core.SPI_MODE) )
+            _RESET := RES_PIN
             _DC := DC_PIN
             _CS := CS_PIN
             outa[_CS] := 1
@@ -978,7 +989,7 @@ DAT
 
 DAT
 {
-Copyright 2024 Jesse Burt
+Copyright 2025 Jesse Burt
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
 associated documentation files (the "Software"), to deal in the Software without restriction,
