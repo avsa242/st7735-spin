@@ -4,7 +4,7 @@
     Description:    Driver for Sitronix ST77xx-based displays
     Author:         Jesse Burt
     Started:        Mar 7, 2020
-    Updated:        Feb 8, 2025
+    Updated:        Oct 15, 2025
     Copyright (c) 2025 - See end of file for terms of use.
 ----------------------------------------------------------------------------------------------------
 }
@@ -451,14 +451,14 @@ PUB clear()
     outa[_CS] := 0
     spi.wr_byte(core.RAMWR)
     outa[_DC] := core.DATA
-    spi.wrwordx_msbf(_bgcolor, _buff_sz/2)
+    spi.wrwordx_msbf(_bgcolor, _buff_sz)
     outa[_CS] := 1
 
 #else
 
 PUB clear()
 ' Clear the display buffer
-    wordfill(_ptr_drawbuffer, _bgcolor, _buff_sz/2)
+    wordfill(_ptr_drawbuffer, _bgcolor, _buff_sz)
 #endif
 
 
