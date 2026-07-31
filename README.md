@@ -16,13 +16,16 @@ This is a P8X32A/Propeller, P2X8C4M64P/Propeller 2 driver object for Sitronix ST
 * Control display visibility (independent of display RAM contents)
 * Set subpixel order (RGB, BGR)
 * Set color depth (see limitations below)
+* Backlight brightness control via I/O pin
 
 
 ## Requirements
 
 P1/SPIN1:
 * spin-standard-library
-* P1/SPIN1: 1 extra core/cog for the PASM SPI engine
+* P1/SPIN1:
+    * 1 extra core/cog for the PASM SPI engine
+    * 1 extra core/cog for the backlight PWM engine (backlight pin control is optional)
 * graphics.common.spinh (provided by spin-standard-library)
 
 P2/SPIN2:
@@ -34,10 +37,10 @@ P2/SPIN2:
 
 | Processor | Language | Compiler               | Backend      | Status                |
 |-----------|----------|------------------------|--------------|-----------------------|
-| P1        | SPIN1    | FlexSpin (6.9.4)       | Bytecode     | OK                    |
-| P1        | SPIN1    | FlexSpin (6.9.4)       | Native/PASM  | OK                    |
-| P2        | SPIN2    | FlexSpin (6.9.4)       | NuCode       | OK (Untested)         |
-| P2        | SPIN2    | FlexSpin (6.9.4)       | Native/PASM2 | OK                    |
+| P1        | SPIN1    | FlexSpin (7.7.0)       | Bytecode     | OK                    |
+| P1        | SPIN1    | FlexSpin (7.7.0)       | Native/PASM  | OK                    |
+| P2        | SPIN2    | FlexSpin (7.7.0)       | NuCode       | Runtime issues        |
+| P2        | SPIN2    | FlexSpin (7.7.0)       | Native/PASM2 | OK                    |
 
 (other versions or toolchains not listed are not supported, and _may or may not_ work)
 
