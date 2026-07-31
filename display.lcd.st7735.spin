@@ -4,8 +4,8 @@
     Description:    Driver for Sitronix ST77xx-based displays
     Author:         Jesse Burt
     Started:        Mar 7, 2020
-    Updated:        Oct 15, 2025
-    Copyright (c) 2025 - See end of file for terms of use.
+    Updated:        Jul 31, 2026
+    Copyright (c) 2026 - See end of file for terms of use.
 ----------------------------------------------------------------------------------------------------
 }
 { these displays use way more memory than the P1 has, so drawing directly to the display is the
@@ -30,10 +30,9 @@ CON
     RST             = 4
     SPI_FREQ        = 1_000_000
 
-
     BPP             = 16                            ' bits per pixel/color depth of the display
     BYTESPERPX      = 1 #> (BPP/8)                  ' limit to minimum of 1
-    BPPDIV          = BYTESPERPX #> (8 / BPP)       ' limit to range BYTESPERPX .. (8/BPP)
+    BPPDIV          = 1 #> (8 / BPP)                ' limit to range BYTESPERPX .. (8/BPP)
     BUFF_SZ         = (WIDTH * HEIGHT) / BPPDIV
     MAX_COLOR       = (1 << BPP)-1
     XMAX            = WIDTH-1
@@ -92,9 +91,9 @@ VAR
 
 OBJ
 
-    spi:    "com.spi.20mhz"                       ' SPI engine
-    core:   "core.con.st7735"                     ' HW-specific constants
-    time:   "time"                                ' basic timekeeping methods
+    spi:    "com.spi.20mhz"                     ' SPI engine
+    core:   "core.con.st7735"                   ' HW-specific constants
+    time:   "time"                              ' basic timekeeping methods
 
 
 PUB null()
@@ -451,14 +450,14 @@ PUB clear()
     outa[_CS] := 0
     spi.wr_byte(core.RAMWR)
     outa[_DC] := core.DATA
-    spi.wrwordx_msbf(_bgcolor, _buff_sz)
+    spi.wrwordx_msbf(_bgcolor, _buff_sz/2)
     outa[_CS] := 1
 
 #else
 
 PUB clear()
 ' Clear the display buffer
-    wordfill(_ptr_drawbuffer, _bgcolor, _buff_sz)
+    wordfill(_ptr_drawbuffer, _bgcolor, _buff_sz/2)
 #endif
 
 
@@ -620,7 +619,7 @@ PUB line(x1, y1, x2, y2, color) | sx, sy, ddx, ddy, err, e2
         outa[_DC] := core.CMD
         spi.wr_byte(core.RAMWR)
         outa[_DC] := core.DATA
-        spi.wrwordx_msbf(color, (||(y2-y1))+1)
+        spi.wrwordx_msbf(color, (abs(y2-y1))+1)
         outa[_CS] := 1
         return
     if (y1 == y2)
@@ -629,12 +628,12 @@ PUB line(x1, y1, x2, y2, color) | sx, sy, ddx, ddy, err, e2
         outa[_DC] := core.CMD
         spi.wr_byte(core.RAMWR)
         outa[_DC] := core.DATA
-        spi.wrwordx_msbf(color, (||(x2-x1))+1)
+        spi.wrwordx_msbf(color, (abs(x2-x1))+1)
         outa[_CS] := 1
         return
 
-    ddx := ||(x2-x1)
-    ddy := ||(y2-y1)
+    ddx := abs(x2-x1)
+    ddy := abs(y2-y1)
     err := ddx-ddy
 
     sx := -1
@@ -913,6 +912,7 @@ PUB reset()
     else                                        ' no I/O pin defined - do
         command(core.SOFT_RESET)                '   soft reset instead
 
+
 #ifdef GFX_DIRECT
 pub scroll_up_fs(px)
 ' dummy method
@@ -989,7 +989,7 @@ DAT
 
 DAT
 {
-Copyright 2025 Jesse Burt
+Copyright 2026 Jesse Burt
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
 associated documentation files (the "Software"), to deal in the Software without restriction,
