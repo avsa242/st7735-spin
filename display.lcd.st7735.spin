@@ -30,9 +30,12 @@ CON
     RST             = 4
     SPI_FREQ        = 1_000_000
 
-    BPP             = 16                            ' bits per pixel/color depth of the display
-    BYTESPERPX      = 1 #> (BPP/8)                  ' limit to minimum of 1
-    BPPDIV          = 1 #> (8 / BPP)                ' limit to range BYTESPERPX .. (8/BPP)
+    BL_PWM_FREQ     = 1000                      ' backlight PWM frequency
+'   --
+
+    BPP             = 16                        ' bits per pixel/color depth of the display
+    BYTESPERPX      = 1 #> (BPP/8)              ' limit to minimum of 1
+    BPPDIV          = 1 #> (8 / BPP)            ' limit to range BYTESPERPX .. (8/BPP)
     BUFF_SZ         = (WIDTH * HEIGHT) / BPPDIV
     MAX_COLOR       = (1 << BPP)-1
     XMAX            = WIDTH-1
@@ -94,6 +97,7 @@ OBJ
     spi:    "com.spi.20mhz"                     ' SPI engine
     core:   "core.con.st7735"                   ' HW-specific constants
     time:   "time"                              ' basic timekeeping methods
+    pwm:    "signal.synth.pwm"                  ' PWM synthesis
 
 
 PUB null()
@@ -134,6 +138,17 @@ PUB startx(CS_PIN, SCK_PIN, MOSI_PIN, DC_PIN, RES_PIN, DISP_W, DISP_H, p_disp): 
     ' Double check I/O pin assignments, connections, power
     ' Lastly - make sure you have at least one free core/cog
     return FALSE
+
+
+pub startx_brightpin(CS_PIN, SCK_PIN, MOSI_PIN, DC_PIN, RES_PIN, BRIGHT_PIN, DISP_W, DISP_H, p_disp): s
+' Start the driver using custom I/O settings, with backlight brightness pin
+'   BRIGHT_PIN:         Brightness pin (set to -1 if not used), 0..31 (*uses a cog for PWM engine)
+'   (other parameters: refer to startx() above)
+    s := startx(CS_PIN, SCK_PIN, MOSI_PIN, DC_PIN, RES_PIN, DISP_W, DISP_H, p_disp)
+
+    if ( s and (BRIGHT_PIN => 0) and (BRIGHT_PIN =< 31) )
+        ' start PWM (but only if the driver started)
+        pwm.start(BRIGHT_PIN, BL_PWM_FREQ)
 
 
 PUB stop()
@@ -917,6 +932,13 @@ PUB reset()
 pub scroll_up_fs(px)
 ' dummy method
 #endif
+
+
+PUB set_brightness(b)
+' Set display brightness
+'   b:  brightness in percent (0..100)
+'   NOTE: Driver must have been started with a valid BRIGHT_PIN
+    pwm.set_duty( (b #> 0 <# 100) * 10)
 
 
 PUB show()
